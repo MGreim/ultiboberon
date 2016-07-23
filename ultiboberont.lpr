@@ -217,8 +217,9 @@ PROCEDURE main;
               exit;
             END;
 
-         risc.init(paramstr(1), paramstr(2), paramstr(3));
 
+//         risc.init(paramstr(1), paramstr(2), paramstr(3));
+           risc.init('oberon.dsk', '', '');
 
 
          done := False;
@@ -231,6 +232,7 @@ PROCEDURE main;
 
               risc.run(CPU_HZ DIV FPS);
               update_texture(risc.get_framebuffer_ptr);
+              inc(frame_start);
 
 
               exitcode := 0;
