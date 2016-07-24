@@ -40,6 +40,7 @@ uses
   Framebuffer,
   BCM2836,
   BCM2709,
+
   SysUtils,
   Mouse,
            //  Keyboard, {Keyboard uses USB so that will be included automatically}
@@ -85,7 +86,7 @@ PROCEDURE init_texture;
      VAR i : longint;
 
      BEGIN
-       fillchar(cache,sizeof(cache), 0);
+    fillchar(cache,sizeof(cache), 0);
 
        FOR  i := 0 TO Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT) DO
 
@@ -233,42 +234,57 @@ PROCEDURE main;
        frame_start: uint32_t;
        frame_end: uint32_t;
 
-       delay: longint;
+       mydelay: longint;
 
 
 
        BEGIN
+       writeln('Now in main');
+   write('weiter mit Taste');
 
-         IF paramcount <> 1 THEN
-            BEGIN
-              writeln('Argv : ', paramcount);
-              writeln('Args : ', paramstr(0), ' ', paramstr(1),' ',paramstr(2),' ',paramstr(3));
-              writeln('Usage: riscpas disk-file-name [coredumpfile_from_cycle coredumpfile_to_cycle]');
-              writeln('Stop with Alt-F4');
-              exitcode := 1;
-              exit;
-            END;
+         //IF paramcount <> 1 THEN
+         //   BEGIN
+         //     writeln('Argv : ', paramcount);
+         //     writeln('Args : ', paramstr(0), ' ', paramstr(1),' ',paramstr(2),' ',paramstr(3));
+         //     writeln('Usage: riscpas disk-file-name [coredumpfile_from_cycle coredumpfile_to_cycle]');
+         //     writeln('Stop with Alt-F4');
+         //     exitcode := 1;
+         //     exit;
+         //   END;
 
 
 //         risc.init(paramstr(1), paramstr(2), paramstr(3));
+           write('jetzt risc.init');
+           //REPEAT
+           //UNTIL ConsoleKeyPressed;
+
            risc.init('oberon.dsk', '', '');
            writeln( ' oberon.dsk is loaded');
 
          done := False;
+         frame_start := getTickCount;
+         ActivityLEDEnable;
+
 
          WHILE NOT(done) DO
 
             BEGIN
 
               risc.set_time(frame_start);
-
+              ActivityLEDON;
               risc.run(CPU_HZ DIV FPS);
+              ActivityLEDoff;
               update_texture(risc.get_framebuffer_ptr);
+              frame_end := getTickCount;
               inc(frame_start);
+              mydelay := frame_start + (1000 div FPS) - frame_end;
+
+              IF mydelay > 0 THEN sleep(mydelay);
+
 
 
               exitcode := 0;
-        END; (* while not done *)
+           END; (* while not done *)
         risc.done;
         //shutting down video subsystem
 
@@ -299,10 +315,20 @@ begin
    end;
 
 
-   FramebufferInit;
-   FramebufferDeviceAllocate(MyFramebuffer, MyProperties);
-//   init_texture;
-//   main;
+  FramebufferInit;
+  FramebufferDeviceAllocate(MyFramebuffer, MyProperties);
+   writeln('Framebuffer initialisiert');
+   write('weiter mit Taste');
+
+
+   init_texture;
+   writeln('texture buffer filled');
+//   FramebufferDevicePutRect(MyFramebuffer, 0, 0, @buffer, RISC_SCREEN_WIDTH,RISC_SCREEN_HEIGHT,0,FRAMEBUFFER_TRANSFER_DMA);
+   FramebufferDeviceWrite(MyFramebuffer, 0, 0, @buffer, 1000,FRAMEBUFFER_TRANSFER_DMA);
+
+   writeln('Jetzt nach main... ?');
+
+   main;
 
 
   Count := 0;

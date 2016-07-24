@@ -187,6 +187,8 @@ PROCEDURE riscty.coredumpinit(froms, tos : string);
 
 
         BEGIN
+        IF froms = '' THEN exit;
+        IF tos = '' THEN exit;
         coredumpfromcycle := 0;
         coredumptocycle := 0;
 
@@ -668,12 +670,12 @@ PROCEDURE riscty.store_io(address: uint32_t;  value: uint32_t);
           4:  BEGIN
               (* LED control*)
               leds:= value;
-              write('LEDs: ');
-                      FOR i := 7 DOWNTO 0 DO
-                        BEGIN
-                          IF ((leds and (1 shl i)) > 0) THEN  write(i) ELSE write('-');
-                        END;
-              writeln;
+              //write('LEDs: ');
+              //        FOR i := 7 DOWNTO 0 DO
+              //          BEGIN
+              //            IF ((leds and (1 shl i)) > 0) THEN  write(i) ELSE write('-');
+              //          END;
+              //writeln;
               END;
 
           8: BEGIN

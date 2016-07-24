@@ -60,6 +60,7 @@ CONSTRUCTOR diskty.init(filename : string);
         VAR buffer : bufty;
 
         BEGIN
+         writeln(' Now in diskty.init');
         state := diskCommand;
         sdcard := False;
         buffer[0] := 0;
