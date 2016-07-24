@@ -76,6 +76,9 @@ var
  cache: cachety;
  buffer: bufferty;
 
+ MyFramebuffer : PFramebufferDevice;
+ MyProperties : PFramebufferProperties;
+
 
 
 PROCEDURE init_texture;
@@ -92,6 +95,34 @@ PROCEDURE init_texture;
 
 //       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
      END;
+
+//In your case if you are creating an image in memory, which is similar to how
+//many graphics libraries render in memory using their own canvas, then one option
+//would be the use the framebuffer device API from the Framebuffer.pas unit which
+//provides functions like FramebufferDevicePutRect to quickly and efficiently put
+//an image from memory to the framebuffer device (normally using DMA).
+//The format (bits per pixel, colors depth etc) of the image passed to the
+//framebuffer functions is assumed to be the same format used by the framebuffer
+//device (which may differ between devices) and no transformation is done at all.
+
+// function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
+{Put a rectangular area of pixels from a supplied buffer to framebuffer memory}
+{Framebuffer: The framebuffer device to put to}
+{X: The starting column of the put}
+{Y: The starting row of the put}
+{Buffer: Pointer to a block of memory containing the pixels in a contiguous block of rows}
+{Width: The number of columns to put}
+{Height: The number of rows to put}
+{Skip: The number of pixels to skip in the buffer after each row (Optional)}
+{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
+{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
+
+
+
+
 
 PROCEDURE update_texture(framebufferpointer : uint32_t);
 
@@ -161,6 +192,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
+                 FramebufferDevicePutRect(MyFramebuffer, 0, 0, ptr, RISC_SCREEN_WIDTH,RISC_SCREEN_HEIGHT,0,FRAMEBUFFER_TRANSFER_DMA);
 
                END;
         END;
@@ -220,7 +252,7 @@ PROCEDURE main;
 
 //         risc.init(paramstr(1), paramstr(2), paramstr(3));
            risc.init('oberon.dsk', '', '');
-
+           writeln( ' oberon.dsk is loaded');
 
          done := False;
 
@@ -248,6 +280,7 @@ PROCEDURE main;
 
 
 begin
+
  // MouseInit;
  {Let's create a console window again but this time on the left side of the screen}
  Handle1:=ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL,True);
@@ -265,25 +298,11 @@ begin
     ConsoleWindowWriteLn(Handle1,'Screen is ' + IntToStr(ScreenWidth) + ' pixels wide by ' + IntToStr(ScreenHeight) + ' pixels high');
    end;
 
- // Now try to load a new cursorshape from the disk, otherwise take the default mycursor
- CreateCursor;
 
- // writeln seems to work as well
- writeln('Press the left mouse button to draw a line, press the right mouse button to terminate the program');
-
-//   We'll use a couple of variables to track the position in response to mouse messages}
-
-  // My new things... and it works
-  maxWidth := ScreenWidth;
-  maxHeight := ScreenHeight;
-  altx:=maxWidth div 2;
-  alty:=maxHeight div 2;
-
-  ConsoleWindowSetX(Handle1,altx);
-  ConsoleWindowSetY(Handle1,alty);
-  CursorSetState(True,altx, alty,False);
-
-   main;
+   FramebufferInit;
+   FramebufferDeviceAllocate(MyFramebuffer, MyProperties);
+//   init_texture;
+//   main;
 
 
   Count := 0;
