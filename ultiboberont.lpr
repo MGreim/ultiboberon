@@ -37,15 +37,13 @@ uses
   Platform,
   Threads,
   Console,
-  Framebuffer,
+  GraphicsConsole,
   BCM2836,
   BCM2709,
 
   SysUtils,
-  Mouse,
            //  Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
-  linecircle,
 
   risccore, riscglob;
 
@@ -67,18 +65,17 @@ var
  ColumnCount:LongWord;
  CurrentX :LongWord;
  CurrentY :LongWord;
- Handle1:TWindowHandle;
+ GraphicHandle1 :TWindowHandle;
+
  altx, alty, neux, neuy : longint;
  Count:LongWord;
- MouseData:TMouseData;
+
  ScreenWidth, ScreenHeight : LongWord;
  maxheight, maxwidth : LongInt;
 
  cache: cachety;
  buffer: bufferty;
 
- MyFramebuffer : PFramebufferDevice;
- MyProperties : PFramebufferProperties;
 
 
 
@@ -97,29 +94,6 @@ PROCEDURE init_texture;
 //       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
      END;
 
-//In your case if you are creating an image in memory, which is similar to how
-//many graphics libraries render in memory using their own canvas, then one option
-//would be the use the framebuffer device API from the Framebuffer.pas unit which
-//provides functions like FramebufferDevicePutRect to quickly and efficiently put
-//an image from memory to the framebuffer device (normally using DMA).
-//The format (bits per pixel, colors depth etc) of the image passed to the
-//framebuffer functions is assumed to be the same format used by the framebuffer
-//device (which may differ between devices) and no transformation is done at all.
-
-// function FramebufferDevicePutRect(Framebuffer:PFramebufferDevice;X,Y:LongWord;Buffer:Pointer;Width,Height,Skip,Flags:LongWord):LongWord;
-{Put a rectangular area of pixels from a supplied buffer to framebuffer memory}
-{Framebuffer: The framebuffer device to put to}
-{X: The starting column of the put}
-{Y: The starting row of the put}
-{Buffer: Pointer to a block of memory containing the pixels in a contiguous block of rows}
-{Width: The number of columns to put}
-{Height: The number of rows to put}
-{Skip: The number of pixels to skip in the buffer after each row (Optional)}
-{Flags: The flags for the transfer (eg FRAMEBUFFER_TRANSFER_DMA)}
-{Return: ERROR_SUCCESS if completed or another error code on failure}
-
-{Note: Caller must ensure pixel data is in the correct color format for the framebuffer}
-{Note: The default method assumes that framebuffer memory is DMA coherent and does not require cache invalidation after a DMA write}
 
 
 
@@ -192,8 +166,23 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                  rect.h := (dirty_y2 - dirty_y1 + 1);
 
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
+
+                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_ARGB32);
+                 {8 bits per pixel Red/Green/Blue (RGB332)}
+{Draw an image on an existing console window}
+{Handle: The handle of the window to draw on}
+{X: The left starting point of the image (relative to current viewport)}
+{Y: The top starting point of the image (relative to current viewport)}
+{Image: Pointer to the image data in a contiguous block of pixel rows}
+{Width: The width in pixels of a row in the image data}
+{Height: The height in pixels of all rows in the image data}
+{Format: The color format of the image data (eg COLOR_FORMAT_ARGB32) Pass COLOR_FORMAT_UNKNOWN to use the window format}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
+
+{Note: For Graphics Console functions, Viewport is based on screen pixels not characters}
+
+
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
-                 FramebufferDevicePutRect(MyFramebuffer, 0, 0, ptr, RISC_SCREEN_WIDTH,RISC_SCREEN_HEIGHT,0,FRAMEBUFFER_TRANSFER_DMA);
 
                END;
         END;
@@ -298,82 +287,35 @@ PROCEDURE main;
 begin
 
  // MouseInit;
- {Let's create a console window again but this time on the left side of the screen}
- Handle1:=ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL,True);
-
- {To prove that worked let's output some text on the console window}
- ConsoleWindowWriteLn(Handle1,'Welcome to MGs extended Mouse example');
 
 
- {Now let's get the current position of the console cursor into a couple of variables}
- ConsoleWindowGetXY(Handle1,CurrentX,CurrentY);
+//   GraphicsConsoleInit;
+//   writeln('Framebuffer initialisiert');
+   // GraphicsConsoleInit;
+   GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
+//   write('weiter mit Taste');
 
-  if FramebufferGetPhysical(ScreenWidth,ScreenHeight) = ERROR_SUCCESS then
-   begin
-    {Print our screen dimensions on the console}
-    ConsoleWindowWriteLn(Handle1,'Screen is ' + IntToStr(ScreenWidth) + ' pixels wide by ' + IntToStr(ScreenHeight) + ' pixels high');
-   end;
-
-
-  FramebufferInit;
-  FramebufferDeviceAllocate(MyFramebuffer, MyProperties);
-   writeln('Framebuffer initialisiert');
-   write('weiter mit Taste');
+   GraphicsWindowShow(GraphicHandle1);
+   IF GraphicsWindowSetViewPort(GraphicHandle1, 10, 10, 1000, 1000) = ERROR_SUCCESS THEN  GraphicsWindowDrawLine(GraphicHandle1, 10, 10, 100, 100, COLOR_RED, 2);
+{Set the rectangle X1,Y1,X2,Y2 of the window viewport for an existing console window}
+{Handle: The handle of the window to set the rectangle for}
+{Rect: The rectangle to set for the window viewport}
+{Return: ERROR_SUCCESS if completed or another error code on failure}
 
 
    init_texture;
-   writeln('texture buffer filled');
-//   FramebufferDevicePutRect(MyFramebuffer, 0, 0, @buffer, RISC_SCREEN_WIDTH,RISC_SCREEN_HEIGHT,0,FRAMEBUFFER_TRANSFER_DMA);
-   FramebufferDeviceWrite(MyFramebuffer, 0, 0, @buffer, 1000,FRAMEBUFFER_TRANSFER_DMA);
+//   writeln('texture buffer filled');
 
-   writeln('Jetzt nach main... ?');
+//   writeln('Jetzt nach main... ?');
 
    main;
 
 
-  Count := 0;
-  REPEAT
-      if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
-      begin
-         neux := altx + MouseData.OffsetX;
-         neuy := alty + MouseData.OffsetY;
-         IF neux > maxwidth THEN neux := maxWidth;
-         IF neuy > maxHeight THEN neuy := maxHeight;
-         IF neux < 0 THEN neux := 0;
-         IF neux < 0 THEN neuy := 0;
-         CursorSetState(True,neuX,neuY,False);
-
-        if (MouseData.Buttons and MOUSE_LEFT_BUTTON) <> 0 then
-           begin
-//                ConsoleWindowWriteLn(Handle1, 'Left Button pressed');
-
- //               FramebufferConsoleDrawLine(ConsoleDeviceGetDefault,altx,alty,neux,neuy,COLOR_RED,2);
-                  line(altx, alty, neux, neuy, COLOR_RED);
-           END;
-         altx := altx + MouseData.Offsetx;
-         alty := alty + MouseData.OffsetY;
-         IF altx > maxWidth THEN altx := maxwidth;
-         IF alty > maxHeight THEN alty := maxHeight;
-         IF altx < 0 THEN altx := 0;
-         IF alty < 0 THEN alty := 0;
-
-      end;
-
-
-
-
-  UNTIL ((MouseData.Buttons AND MOUSE_RIGHT_BUTTON) <> 0);
 
 
  // my end
 
 
- {Update our original console}
- ConsoleWindowWriteLn(Handle1,'Clearing the new console');
-
-
- {And say goodbye}
- ConsoleWindowWriteLn(Handle1,'All done, thanks for watching');
 
  {We're not doing a loop this time so we better halt this thread before it exits}
  ThreadHalt(0);
