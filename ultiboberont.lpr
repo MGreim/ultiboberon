@@ -61,18 +61,7 @@ bufferty = ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] OF uint32_t;
 
 {We'll need a few more variables for this example.}
 var
- RowCount:LongWord;
- ColumnCount:LongWord;
- CurrentX :LongWord;
- CurrentY :LongWord;
  GraphicHandle1 :TWindowHandle;
-
- altx, alty, neux, neuy : longint;
- Count:LongWord;
-
- ScreenWidth, ScreenHeight : LongWord;
- maxheight, maxwidth : LongInt;
-
  cache: cachety;
  buffer: bufferty;
 
@@ -90,7 +79,7 @@ PROCEDURE init_texture;
            BEGIN
              buffer[i] := BLACK;
            END;
-
+         GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
 //       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
      END;
 
@@ -108,7 +97,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
 
      VAR
-        rect : rectty;
+
         dirty_y1: integer;
         dirty_y2: integer;
         dirty_x1: integer;
@@ -116,6 +105,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
         idx: integer;
         pixels: uint32_t;
         ptr: Pointer;
+        rect : rectty;
 
         line : 0..RISC_SCREEN_HEIGHT;
         col  : 0..RISC_SCREEN_WIDTH;
@@ -157,6 +147,9 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                      inc(idx);
                    END;(*for col *)
              END;(*for line *)
+
+//          GraphicsWindowDrawImage(GraphicHandle1, 0, 0, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
+
           IF dirty_y1 <= dirty_y2 THEN
 
                BEGIN
@@ -165,9 +158,10 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                  rect.w := (dirty_x2 - dirty_x1 + 1) * 32;
                  rect.h := (dirty_y2 - dirty_y1 + 1);
 
+
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
 
-                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_ARGB32);
+                 GraphicsWindowDrawImage(GraphicHandle1, rect.x, rect.y, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
                  {8 bits per pixel Red/Green/Blue (RGB332)}
 {Draw an image on an existing console window}
 {Handle: The handle of the window to draw on}
@@ -228,8 +222,7 @@ PROCEDURE main;
 
 
        BEGIN
-       writeln('Now in main');
-   write('weiter mit Taste');
+       GraphicsWindowDrawText(GraphicHandle1, 'Now in main', 10,20);
 
          //IF paramcount <> 1 THEN
          //   BEGIN
@@ -248,27 +241,26 @@ PROCEDURE main;
            //UNTIL ConsoleKeyPressed;
 
            risc.init('oberon.dsk', '', '');
-           writeln( ' oberon.dsk is loaded');
+           GraphicsWindowDrawText(GraphicHandle1, ' oberon.dsk is loaded', 10, 30);
 
          done := False;
-         frame_start := getTickCount;
+
          ActivityLEDEnable;
 
 
          WHILE NOT(done) DO
 
             BEGIN
-
+              frame_start := getTickCount64;
               risc.set_time(frame_start);
               ActivityLEDON;
               risc.run(CPU_HZ DIV FPS);
               ActivityLEDoff;
               update_texture(risc.get_framebuffer_ptr);
-              frame_end := getTickCount;
-              inc(frame_start);
+              frame_end := getTickCount64;
               mydelay := frame_start + (1000 div FPS) - frame_end;
 
-              IF mydelay > 0 THEN sleep(mydelay);
+//              IF mydelay > 0 THEN sleep(mydelay);
 
 
 
@@ -292,11 +284,12 @@ begin
 //   GraphicsConsoleInit;
 //   writeln('Framebuffer initialisiert');
    // GraphicsConsoleInit;
-   GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
+   GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULLSCREEN);
 //   write('weiter mit Taste');
 
-   GraphicsWindowShow(GraphicHandle1);
-   IF GraphicsWindowSetViewPort(GraphicHandle1, 10, 10, 1000, 1000) = ERROR_SUCCESS THEN  GraphicsWindowDrawLine(GraphicHandle1, 10, 10, 100, 100, COLOR_RED, 2);
+   GraphicsWindowDrawText(GraphicHandle1,'Marke 1',20,20);
+//   GraphicsWindowShow(GraphicHandle1);
+IF GraphicsWindowSetViewPort(GraphicHandle1, 10, 10, RISC_SCREEN_WIDTH+10, RISC_SCREEN_HEIGHT+10) = ERROR_SUCCESS THEN  GraphicsWindowDrawLine(GraphicHandle1, 10, 10, 100, 10, COLOR_RED, 2);
 {Set the rectangle X1,Y1,X2,Y2 of the window viewport for an existing console window}
 {Handle: The handle of the window to set the rectangle for}
 {Rect: The rectangle to set for the window viewport}
@@ -308,7 +301,7 @@ begin
 
 //   writeln('Jetzt nach main... ?');
 
-   main;
+    main;
 
 
 

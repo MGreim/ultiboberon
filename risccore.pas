@@ -218,7 +218,7 @@ PROCEDURE riscty.coredumpclose;
 
         BEGIN
         close(DUMP);
-        writeln('Dumpfile, closed');
+//        writeln('Dumpfile, closed');
         END;
 
 
@@ -251,7 +251,7 @@ PROCEDURE riscty.coredump;
                 write(DUMP, longint(R[lauf]),#9);
                 END;
 
-        writeln(DUMP);
+//        writeln(DUMP);
         END;
 
 PROCEDURE riscty.run(cycles :  uint32_t);
@@ -412,7 +412,7 @@ PROCEDURE riscty.run(cycles :  uint32_t);
                       IF c_val <= 0 THEN
 
                               BEGIN
-                              writeln(' ERROR: PC ', (PC * 4 - 4) , ': divisor ',c_val, ' is not positive');
+//                              writeln(' ERROR: PC ', (PC * 4 - 4) , ': divisor ',c_val, ' is not positive');
                               a_val := $DEADBEEF;
                               H     := $DEADBEEF;
 

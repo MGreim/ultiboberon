@@ -60,24 +60,25 @@ CONSTRUCTOR diskty.init(filename : string);
         VAR buffer : bufty;
 
         BEGIN
-         writeln(' Now in diskty.init');
+//         writeln(' Now in diskty.init');
         state := diskCommand;
         sdcard := False;
         buffer[0] := 0;
 {$I-}
-        writeln(' Filename : ', filename);
+//        writeln(' Filename : ', filename);
         myfile := fileOpen(filename, fmOpenReadWrite);
 {$I+}
         IF myfile = 0 THEN
                 BEGIN
-                writeln('Can''t open file : ', filename,' ', ioresult);
+//                writeln('Can''t open file : ', filename,' ', ioresult);
+//                GraphicWindowDrawText(GraphicHandle1, filename, 40,10);
                 exit;
                 END;
 
         (* Check FOR filesystem-only image, starting directly at sector 1 (DiskAdr 29) *)
         read_sector(buffer);
         IF (buffer[0] = $9B1EA38D) THEN offset := $80002 ELSE offset := 0;
-        writeln(' File Offset : ', offset);
+//        writeln(' File Offset : ', offset);
         sdcard := True;
 
         END;
