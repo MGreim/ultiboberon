@@ -114,6 +114,8 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
         BEGIN (* TODO: move dirty rectangle tracking into emulator core?*)
    (*     writeln('upd texture'); *)
+        GraphicsWindowDrawText(GraphicHandle1, '/', 30, 30);
+
           dirty_y1 := RISC_SCREEN_HEIGHT;
           dirty_y2 := 0;
           dirty_x1 := RISC_SCREEN_WIDTH div 32;
@@ -162,6 +164,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
 
                  GraphicsWindowDrawImage(GraphicHandle1, rect.x, rect.y, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
+                 GraphicsWindowDrawText(GraphicHandle1, 'X', 30, 30);
                  {8 bits per pixel Red/Green/Blue (RGB332)}
 {Draw an image on an existing console window}
 {Handle: The handle of the window to draw on}
@@ -214,8 +217,8 @@ PROCEDURE main;
 
     var
        done: bool;
-       frame_start: uint32_t;
-       frame_end: uint32_t;
+       frame_start: longword;
+       frame_end, starttime: longword;
 
        mydelay: longint;
 
@@ -236,7 +239,7 @@ PROCEDURE main;
 
 
 //         risc.init(paramstr(1), paramstr(2), paramstr(3));
-           write('jetzt risc.init');
+//           write('jetzt risc.init');
            //REPEAT
            //UNTIL ConsoleKeyPressed;
 
@@ -248,16 +251,17 @@ PROCEDURE main;
          ActivityLEDEnable;
 
 
+         starttime := getTickCount64;
          WHILE NOT(done) DO
 
             BEGIN
-              frame_start := getTickCount64;
+              frame_start := getTickCount64 - starttime;
               risc.set_time(frame_start);
               ActivityLEDON;
               risc.run(CPU_HZ DIV FPS);
               ActivityLEDoff;
               update_texture(risc.get_framebuffer_ptr);
-              frame_end := getTickCount64;
+              frame_end := getTickCount64 - starttime;
               mydelay := frame_start + (1000 div FPS) - frame_end;
 
 //              IF mydelay > 0 THEN sleep(mydelay);
