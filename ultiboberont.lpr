@@ -42,7 +42,8 @@ uses
   BCM2709,
 
   SysUtils,
-           //  Keyboard, {Keyboard uses USB so that will be included automatically}
+  Mouse,
+  Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
 
   risccore, riscglob;
@@ -164,7 +165,8 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
 
-                 GraphicsWindowDrawImage(GraphicHandle1, rect.x, rect.y, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
+//                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
+//                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, (dirty_x2 - dirty_x1), rect.h,COLOR_FORMAT_UNKNOWN);
 //                 GraphicsWindowDrawText(GraphicHandle1, 'X', 30, 30);
                  {8 bits per pixel Red/Green/Blue (RGB332)}
 {Draw an image on an existing console window}
@@ -226,10 +228,12 @@ PROCEDURE main;
     var
        done: bool;
        frame_start: longword;
-       frame_end, starttime: longword;
+       frame_end, starttime, Count: longword;
 
        mydelay, counter: longint;
        zeile : string;
+        MouseData:TMouseData;
+        neux, neuy, altx , alty : longint;
 
 
 
@@ -263,28 +267,37 @@ PROCEDURE main;
 
          starttime := getTickCount64;
          counter := 0;
+         Count := 0;
+         neux := 0;
+         neuy := 0;
+         altx := 100;
+         alty := 100;
          WHILE NOT(done) DO
 
             BEGIN
               frame_start := getTickCount64 - starttime;
               risc.set_time(frame_start);
+
+                   if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
+                          begin
+                                 neux := altx + MouseData.OffsetX;
+                                 neuy := alty + MouseData.OffsetY;
+                                 neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
+                                 neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
+                                 risc.mouse_moved(neux, neuy -1);
+
+                          end;
+
+
               toggleLED;
               risc.run(CPU_HZ DIV FPS);
               inc(counter);
               update_texture(risc.get_framebuffer_ptr);
 
-              IF counter > 100 THEN
-
-                         BEGIN
-                           counter := 0;
-                           str(frame_start, zeile);
-                           GraphicsWindowDrawText(GraphicHandle1, zeile, 10, 50);
-
-                         end;
               frame_end := getTickCount64 - starttime;
               mydelay := frame_start + (1000 div FPS) - frame_end;
 
-//              IF mydelay > 0 THEN sleep(mydelay);
+              IF mydelay > 0 THEN sleep(mydelay);
 
 
 
