@@ -95,8 +95,7 @@ ROMbootsize =  388;
 
 (* bootloader: ARRAY [0..Pred(ROMWords)] of uint32_t = ( *)
 (* 388 otherwise i have to fill up the risc files, or i have to read it dynamically *)
-bootloader: ARRAY[0..Pred(ROMbootsize)] of uint32_t = (
-{$include "risc-boot.inc"});
+bootloader: ARRAY[0..Pred(ROMbootsize)] of uint32_t = ({$include "./risc-boot.inc"});
 
 
 
@@ -218,7 +217,7 @@ PROCEDURE riscty.coredumpclose;
 
         BEGIN
         close(DUMP);
-//        writeln('Dumpfile, closed');
+        writeln('Dumpfile, closed');
         END;
 
 
@@ -251,7 +250,7 @@ PROCEDURE riscty.coredump;
                 write(DUMP, longint(R[lauf]),#9);
                 END;
 
-//        writeln(DUMP);
+        writeln(DUMP);
         END;
 
 PROCEDURE riscty.run(cycles :  uint32_t);

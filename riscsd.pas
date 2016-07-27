@@ -10,7 +10,8 @@ UNIT riscsd;
 
 INTERFACE
 
-USES sysutils, riscglob;
+USES
+    Filesystem, FATFS, sysutils, riscglob;
 
 CONST BUFSBYTE = 512;
       BUFSWORD = BUFSBYTE DIV 4;
@@ -60,7 +61,17 @@ CONSTRUCTOR diskty.init(filename : string);
         VAR buffer : bufty;
 
         BEGIN
-//         writeln(' Now in diskty.init');
+//        writeln(' Now in diskty.init');
+        {We may need to wait a couple of seconds for any drive to be ready}
+//         WriteLn('Waiting for drive C:\');
+         while not DirectoryExists('C:\') do
+          begin
+           {Sleep for a second}
+           Sleep(1000);
+          end;
+//         writeLn('C:\ drive is ready');
+
+
         state := diskCommand;
         sdcard := False;
         buffer[0] := 0;
@@ -79,6 +90,7 @@ CONSTRUCTOR diskty.init(filename : string);
         read_sector(buffer);
         IF (buffer[0] = $9B1EA38D) THEN offset := $80002 ELSE offset := 0;
 //        writeln(' File Offset : ', offset);
+//        writeln('Buffer[0] : ',buffer[0]);
         sdcard := True;
 
         END;
