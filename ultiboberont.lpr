@@ -234,6 +234,8 @@ PROCEDURE main;
        zeile : string;
         MouseData:TMouseData;
         neux, neuy, altx , alty : longint;
+        mybutton : integer;
+        myKeyCode : word;
 
 
 
@@ -277,6 +279,7 @@ PROCEDURE main;
             BEGIN
               frame_start := getTickCount64 - starttime;
               risc.set_time(frame_start);
+
               IF MousePeek = ERROR_SUCCESS THEN
                    BEGIN
                    if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
@@ -285,14 +288,41 @@ PROCEDURE main;
                                  neuy := alty + MouseData.OffsetY;
                                  neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
                                  neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
-                                 risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
+                                 IF ((neux <> altx) OR (neuy <> alty)) THEN risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
                                  altx := neux;
                                  alty := neuy;
+                                 IF MouseData.Buttons <> 0 THEN
+
+                                                      BEGIN
+                                                      mybutton := 0;
+                                                      IF (MouseData.Buttons and MOUSE_LEFT_BUTTON)   <> 0 THEN mybutton := 1;
+                                                      IF (MouseData.Buttons and MOUSE_MIDDLE_BUTTON) <> 0 THEN mybutton := 2;
+                                                      IF (MouseData.Buttons and MOUSE_RIGHT_BUTTON)  <> 0 THEN mybutton := 3;
+                                                      IF mybutton > 0 THEN
+                                                                           BEGIN
+                                                                           risc.mouse_button(mybutton, True);
+                                                                           end;
+
+                                                      end
+                                                    ELSE
+                                                      BEGIN
+                                                      IF mybutton > 0 THEN
+                                                                  BEGIN
+                                                                  risc.mouse_button(mybutton, False);
+                                                                  mybutton := 0;
+                                                                  end;
+                                                      end;
+
                                  MouseFlush;
 
                           end;
 
                    end;
+              //IF KeyboardGet(myKeyCode) = ERROR_SUCCESS THEN
+              //
+              //       BEGIN
+              //
+              //       end;
 
 
               toggleLED;
