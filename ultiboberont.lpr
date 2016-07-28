@@ -270,23 +270,29 @@ PROCEDURE main;
          Count := 0;
          neux := 0;
          neuy := 0;
-         altx := 100;
-         alty := 100;
+         altx := 0;
+         alty := 0;
          WHILE NOT(done) DO
 
             BEGIN
               frame_start := getTickCount64 - starttime;
               risc.set_time(frame_start);
-
+              IF MousePeek = ERROR_SUCCESS THEN
+                   BEGIN
                    if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
                           begin
                                  neux := altx + MouseData.OffsetX;
                                  neuy := alty + MouseData.OffsetY;
                                  neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
                                  neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
-                                 risc.mouse_moved(neux, neuy -1);
+                                 risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
+                                 altx := neux;
+                                 alty := neuy;
+                                 MouseFlush;
 
                           end;
+
+                   end;
 
 
               toggleLED;
