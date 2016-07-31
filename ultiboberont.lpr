@@ -228,14 +228,19 @@ PROCEDURE main;
     var
        done: bool;
        frame_start: longword;
-       frame_end, starttime, Count: longword;
+       frame_end, starttime, kCount, mCount: longword;
 
        mydelay, counter: longint;
        zeile : string;
         MouseData:TMouseData;
+        KeyboardData : TKeyboardData;
+        KeyBoardDataArray : ARRAY[0..1] OF TKeyboardData;
+        scancodefeld : keybufty;
+        lauf : integer;
         neux, neuy, altx , alty : longint;
         mybutton : integer;
         myKeyCode : word;
+        zeichen, zeichen2 : string;
 
 
 
@@ -269,7 +274,8 @@ PROCEDURE main;
 
          starttime := getTickCount64;
          counter := 0;
-         Count := 0;
+         mCount := 0;
+         kCount := 0;
          neux := 0;
          neuy := 0;
          altx := 0;
@@ -282,7 +288,7 @@ PROCEDURE main;
 
               IF MousePeek = ERROR_SUCCESS THEN
                    BEGIN
-                   if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
+                   if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
                           begin
                                  neux := altx + MouseData.OffsetX;
                                  neuy := alty + MouseData.OffsetY;
@@ -318,11 +324,33 @@ PROCEDURE main;
                           end;
 
                    end;
-              //IF KeyboardGet(myKeyCode) = ERROR_SUCCESS THEN
-              //
-              //       BEGIN
-              //
-              //       end;
+
+              IF KeyboardPeek = ERROR_SUCCESS THEN
+
+                     BEGIN
+
+                     IF (KeyboardRead(@KeyboardDataARRAY,SizeOf(KeyboardDataArray), kCount) = ERROR_SUCCESS) THEN
+
+                                  BEGIN
+                                  IF kCount > 8 THEN kCount := 8;
+                                  FOR lauf := 0 TO pred(kCOUNT) DO
+
+                                           BEGIN
+                                             zeichen := '_';
+                                             zeichen2 := '_';
+                                             scancodefeld[lauf] := KeyBoardDataArray[lauf].scancode;
+                                             str(lauf, zeichen);
+                                             str(scancodefeld[lauf], zeichen2);
+
+
+                                             GraphicsWindowDrawChar(GraphicHandle1, KeyBoardDataArray[lauf].charcode, 100 + lauf * 20, 800);
+//                                             GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + lauf * 20, 820);
+                                             GraphicsWindowDrawText(GraphicHandle1, zeichen2, 100 + lauf * 20, 840);
+
+                                           end;
+                                    risc.keyboard_input(scancodefeld, pred(KCount));
+                                  END;
+                     end;
 
 
               toggleLED;
@@ -351,7 +379,8 @@ PROCEDURE main;
 
 begin
 
- // MouseInit;
+      MouseInit;
+     KeyboardInit;
 
 
 //   GraphicsConsoleInit;
