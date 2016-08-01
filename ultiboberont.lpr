@@ -43,6 +43,7 @@ uses
 
   SysUtils,
   Mouse,
+   Keymap_DE,
   Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
 
@@ -241,6 +242,7 @@ PROCEDURE main;
         mybutton : integer;
         myKeyCode : word;
         zeichen, zeichen2 : string;
+        Character : char;
 
 
 
@@ -325,32 +327,58 @@ PROCEDURE main;
 
                    end;
 
-              IF KeyboardPeek = ERROR_SUCCESS THEN
 
-                     BEGIN
+            if ConsoleKeyPressed then begin
 
-                     IF (KeyboardRead(@KeyboardDataARRAY,SizeOf(KeyboardDataArray), kCount) = ERROR_SUCCESS) THEN
+                Character:=ConsoleReadKey;
 
-                                  BEGIN
-                                  IF kCount > 8 THEN kCount := 8;
-                                  FOR lauf := 0 TO pred(kCOUNT) DO
-
-                                           BEGIN
-                                             zeichen := '_';
-                                             zeichen2 := '_';
-                                             scancodefeld[lauf] := KeyBoardDataArray[lauf].scancode;
-                                             str(lauf, zeichen);
-                                             str(scancodefeld[lauf], zeichen2);
-
-
-                                             GraphicsWindowDrawChar(GraphicHandle1, KeyBoardDataArray[lauf].charcode, 100 + lauf * 20, 800);
-//                                             GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + lauf * 20, 820);
-                                             GraphicsWindowDrawText(GraphicHandle1, zeichen2, 100 + lauf * 20, 840);
-
-                                           end;
-                                    risc.keyboard_input(scancodefeld, pred(KCount));
-                                  END;
+                case Character of
+                #0 : begin
+                       Character:=ConsoleReadKey; {Read ScanCode}
+                       //ConsoleWindowWriteLn(WindowHandle,'');
+                       //ConsoleWindowWriteLn(WindowHandle,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4));
+                       zeichen := 'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4);
+                       GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 , 820);
                      end;
+                #13 : GraphicsWindowDrawText(GraphicHandle1, 'CR',  100 + 20, 820);
+// ConsoleWindowWriteLn(WindowHandle,'');
+                else
+//                  ConsoleWindowWriteLn(WindowHandle,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4));
+                  zeichen :=  'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4);
+                  GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + 40, 820);
+
+                end;
+
+              end; { if ConsoleKeyPressed then }
+
+
+
+//              IF KeyboardPeek = ERROR_SUCCESS THEN
+//
+//                     BEGIN
+//
+//                     IF (KeyboardRead(@KeyboardDataARRAY,SizeOf(KeyboardDataArray), kCount) = ERROR_SUCCESS) THEN
+//
+//                                  BEGIN
+//                                  IF kCount > 8 THEN kCount := 8;
+//                                  FOR lauf := 0 TO pred(kCOUNT) DO
+//
+//                                           BEGIN
+//                                             zeichen := '_';
+//                                             zeichen2 := '_';
+//                                             scancodefeld[lauf] := KeyBoardDataArray[lauf].scancode;
+//                                             str(lauf, zeichen);
+//                                             str(scancodefeld[lauf], zeichen2);
+//
+//
+//                                             GraphicsWindowDrawChar(GraphicHandle1, KeyBoardDataArray[lauf].charcode, 100 + lauf * 20, 800);
+////                                             GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + lauf * 20, 820);
+//                                             GraphicsWindowDrawText(GraphicHandle1, zeichen2, 100 + lauf * 20, 840);
+//
+//                                           end;
+//                                    risc.keyboard_input(scancodefeld, pred(KCount));
+//                                  END;
+//                     end;
 
 
               toggleLED;

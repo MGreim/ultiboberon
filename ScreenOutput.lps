@@ -10,6 +10,7 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
+        <TopLine Value="105"/>
         <CursorPos X="106" Y="5"/>
         <UsageCount Value="228"/>
         <Loaded Value="True"/>
@@ -81,7 +82,7 @@
         <Filename Value="..\..\..\fpc\3.1.1\source\rtl\ultibo\core\keyboard.pas"/>
         <UnitName Value="Keyboard"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="175"/>
+        <TopLine Value="529"/>
         <UsageCount Value="220"/>
         <Loaded Value="True"/>
       </Unit9>
