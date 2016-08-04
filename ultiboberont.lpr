@@ -83,7 +83,10 @@ PROCEDURE init_texture;
              buffer[i] := BLACK;
            END;
          GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
-//       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
+//           FrameBufferConsoleDrawImage(ConsoleDeviceGetDefault, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN, 0);
+
+
+         //       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
      END;
 
 
@@ -267,7 +270,7 @@ PROCEDURE main;
            //UNTIL ConsoleKeyPressed;
 
            risc.init('C:\oberon.dsk', '', '');
-           GraphicsWindowDrawText(GraphicHandle1, ' oberon.dsk is loaded', 10, 30);
+//           ConsoleWindowWriteln(WindowHandleX, ' oberon.dsk is loaded');
 
          done := False;
 
@@ -325,31 +328,29 @@ PROCEDURE main;
 
                           end;
 
-                   end;
+                   end; (* end MousePeek *)
 
 
-            if ConsoleKeyPressed then begin
+            if ConsoleKeyPressed then
+                begin
 
-                Character:=ConsoleReadKey;
+                Character := ConsoleReadKey;
 
                 case Character of
                 #0 : begin
                        Character:=ConsoleReadKey; {Read ScanCode}
-                       //ConsoleWindowWriteLn(WindowHandle,'');
-                       //ConsoleWindowWriteLn(WindowHandle,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4));
-                       zeichen := 'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4);
-                       GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 , 820);
+                       GraphicsWindowDrawText(GraphicHandle1,'', 300, 1000);
+                       GraphicsWindowDrawText(GraphicHandle1,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4), 300, 1020);
+
                      end;
-                #13 : GraphicsWindowDrawText(GraphicHandle1, 'CR',  100 + 20, 820);
-// ConsoleWindowWriteLn(WindowHandle,'');
+                #13 : GraphicsWindowDrawText(GraphicHandle1,'CR', 300, 1140);
                 else
-//                  ConsoleWindowWriteLn(WindowHandle,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4));
-                  zeichen :=  'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4);
-                  GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + 40, 820);
+                  GraphicsWindowDrawText(GraphicHandle1,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4), 300, 1060);
 
                 end;
+                sleep(2000);
 
-              end; { if ConsoleKeyPressed then }
+                end; { if ConsoleKeyPressed then }
 
 
 
@@ -410,14 +411,14 @@ begin
       MouseInit;
      KeyboardInit;
 
-
-//   GraphicsConsoleInit;
+     ConsoleInit;
+     GraphicsConsoleInit;
 //   writeln('Framebuffer initialisiert');
    // GraphicsConsoleInit;
-     GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULLSCREEN);
-//   GraphicHandle1 := ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULLSCREEN, True);
+     GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
+//     WindowHandleX := ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_BOTTOM, True);
 
-//   write('weiter mit Taste');
+//     writeln('weiter mit Taste');
 
 //   GraphicsWindowDrawText(GraphicHandle1,'Marke 1',20,20);
 //   GraphicsWindowShow(GraphicHandle1);
@@ -428,10 +429,10 @@ begin
 {Return: ERROR_SUCCESS if completed or another error code on failure}
 
 
-   init_texture;
-//   writeln('texture buffer filled');
+    init_texture;
+//    ConsoleWindowWriteln(WindowHandleX, 'texture buffer filled');
 
-//   writeln('Jetzt nach main... ?');
+//    ConsoleWindowWriteln(WindowHandleX, 'Jetzt nach main... ?');
 
     main;
 
