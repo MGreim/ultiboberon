@@ -38,12 +38,13 @@ uses
   Threads,
   Console,
   GraphicsConsole,
+  Framebuffer,
   BCM2836,
   BCM2709,
 
   SysUtils,
-  Mouse,
-   Keymap_DE,
+//  Mouse,
+//  Keymap_DE,
   Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
 
@@ -67,7 +68,9 @@ var
  cache: cachety;
  buffer: bufferty;
  ledon : Boolean;
+ neux, neuy, altx , alty : longint;
 
+ mybutton : integer;
 
 
 
@@ -82,7 +85,7 @@ PROCEDURE init_texture;
            BEGIN
              buffer[i] := BLACK;
            END;
-         GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
+           GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
 //           FrameBufferConsoleDrawImage(ConsoleDeviceGetDefault, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN, 0);
 
 
@@ -227,6 +230,140 @@ PROCEDURE toggleLED;
           IF ledon THEN ActivityLEDON ELSE ActivityLEDOff;
           end;
 
+PROCEDURE mykeyboard;
+
+          CONST screenh = 1024;
+          VAR Character : char;
+
+             BEGIN
+
+
+            if ConsoleKeyPressed then
+                begin
+
+                Character := ConsoleReadKey;
+                toggleLED;
+
+                case Character of
+                #0 : begin
+                       Character:=ConsoleReadKey; {Read ScanCode}
+                       GraphicsWindowDrawText(GraphicHandle1,'', 100, screenh - 200);
+                       GraphicsWindowDrawText(GraphicHandle1,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4), 100, screenh -180);
+
+                     end;
+                #13 : GraphicsWindowDrawText(GraphicHandle1,'CR', 100, screenh-160);
+                else
+                  GraphicsWindowDrawText(GraphicHandle1,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4), 100, screenh -140);
+
+                end;
+                // sleep(2);
+
+                end; { if ConsoleKeyPressed then }
+
+
+             end;
+
+
+
+//PROCEDURE mymouse;
+//          VAR
+//                     MouseData:TMouseData;
+//                     mcount : longword;
+//
+//
+//        BEGIN
+//        IF MousePeek = ERROR_SUCCESS THEN
+//             BEGIN
+//             if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
+//                    begin
+//                           neux := altx + MouseData.OffsetX;
+//                           neuy := alty + MouseData.OffsetY;
+//                           neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
+//                           neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
+//                           IF ((neux <> altx) OR (neuy <> alty)) THEN risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
+//                           altx := neux;
+//                           alty := neuy;
+//                           IF MouseData.Buttons <> 0 THEN
+//
+//                                                BEGIN
+//                                                mybutton := 0;
+//                                                IF (MouseData.Buttons and MOUSE_LEFT_BUTTON)   <> 0 THEN mybutton := 1;
+//                                                IF (MouseData.Buttons and MOUSE_MIDDLE_BUTTON) <> 0 THEN mybutton := 2;
+//                                                IF (MouseData.Buttons and MOUSE_RIGHT_BUTTON)  <> 0 THEN mybutton := 3;
+//                                                IF mybutton > 0 THEN
+//                                                                     BEGIN
+//                                                                     risc.mouse_button(mybutton, True);
+//                                                                     end;
+//
+//                                                end
+//                                              ELSE
+//                                                BEGIN
+//                                                IF mybutton > 0 THEN
+//                                                            BEGIN
+//                                                            risc.mouse_button(mybutton, False);
+//                                                            mybutton := 0;
+//                                                            end;
+//                                                end;
+//
+//                           MouseFlush;
+//
+//                    end;
+//
+//             end; (* end MousePeek *)
+//
+//
+//
+//          end;
+
+FUNCTION mykeyboard2 : longword;
+
+
+          CONST
+               abstand = 18;
+               left = 50;
+
+          VAR
+
+        KeyBoardData : TKeyboardData;
+        Count : longword;
+        lauf : integer;
+
+
+
+
+
+          BEGIN
+
+          IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
+
+                                  BEGIN
+
+                                  lauf := 38;
+                                  GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
+
+
+                                  GraphicsWindowDrawText(GraphicHandle1, 'Count                  = ' + IntToHex(Count,4), left, 100 + lauf * abstand);
+                                  inc(lauf);
+
+                                  GraphicsWindowDrawText(GraphicHandle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4), left, 100 + lauf * abstand);
+                                  inc(lauf);
+                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4) , left, 100 + lauf * abstand);
+                                  inc(lauf);
+                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4) , left, 100 + lauf * abstand);
+                                  inc(lauf);
+                                  GraphicsWindowDrawLine(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+lauf*abstand, COLOR_RED, 2);
+                                  inc(lauf);
+                                  mykeyboard2 := KeyboardData.ScanCode;
+
+                                  IF lauf > 40 THEN lauf := 38;
+
+                                  end;
+
+
+
+
+          END;
+
 PROCEDURE main;
 
     var
@@ -236,15 +373,6 @@ PROCEDURE main;
 
        mydelay, counter: longint;
        zeile : string;
-        MouseData:TMouseData;
-        KeyboardData : TKeyboardData;
-        KeyBoardDataArray : ARRAY[0..1] OF TKeyboardData;
-        scancodefeld : keybufty;
-        lauf : integer;
-        neux, neuy, altx , alty : longint;
-        mybutton : integer;
-        myKeyCode : word;
-        zeichen, zeichen2 : string;
         Character : char;
 
 
@@ -274,7 +402,6 @@ PROCEDURE main;
 
          done := False;
 
-         ActivityLEDEnable;
 
 
          starttime := getTickCount64;
@@ -290,98 +417,10 @@ PROCEDURE main;
             BEGIN
               frame_start := getTickCount64 - starttime;
               risc.set_time(frame_start);
-
-              IF MousePeek = ERROR_SUCCESS THEN
-                   BEGIN
-                   if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
-                          begin
-                                 neux := altx + MouseData.OffsetX;
-                                 neuy := alty + MouseData.OffsetY;
-                                 neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
-                                 neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
-                                 IF ((neux <> altx) OR (neuy <> alty)) THEN risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
-                                 altx := neux;
-                                 alty := neuy;
-                                 IF MouseData.Buttons <> 0 THEN
-
-                                                      BEGIN
-                                                      mybutton := 0;
-                                                      IF (MouseData.Buttons and MOUSE_LEFT_BUTTON)   <> 0 THEN mybutton := 1;
-                                                      IF (MouseData.Buttons and MOUSE_MIDDLE_BUTTON) <> 0 THEN mybutton := 2;
-                                                      IF (MouseData.Buttons and MOUSE_RIGHT_BUTTON)  <> 0 THEN mybutton := 3;
-                                                      IF mybutton > 0 THEN
-                                                                           BEGIN
-                                                                           risc.mouse_button(mybutton, True);
-                                                                           end;
-
-                                                      end
-                                                    ELSE
-                                                      BEGIN
-                                                      IF mybutton > 0 THEN
-                                                                  BEGIN
-                                                                  risc.mouse_button(mybutton, False);
-                                                                  mybutton := 0;
-                                                                  end;
-                                                      end;
-
-                                 MouseFlush;
-
-                          end;
-
-                   end; (* end MousePeek *)
-
-
-            if ConsoleKeyPressed then
-                begin
-
-                Character := ConsoleReadKey;
-
-                case Character of
-                #0 : begin
-                       Character:=ConsoleReadKey; {Read ScanCode}
-                       GraphicsWindowDrawText(GraphicHandle1,'', 300, 1000);
-                       GraphicsWindowDrawText(GraphicHandle1,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4), 300, 1020);
-
-                     end;
-                #13 : GraphicsWindowDrawText(GraphicHandle1,'CR', 300, 1140);
-                else
-                  GraphicsWindowDrawText(GraphicHandle1,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4), 300, 1060);
-
-                end;
-                sleep(2000);
-
-                end; { if ConsoleKeyPressed then }
-
-
-
-//              IF KeyboardPeek = ERROR_SUCCESS THEN
-//
-//                     BEGIN
-//
-//                     IF (KeyboardRead(@KeyboardDataARRAY,SizeOf(KeyboardDataArray), kCount) = ERROR_SUCCESS) THEN
-//
-//                                  BEGIN
-//                                  IF kCount > 8 THEN kCount := 8;
-//                                  FOR lauf := 0 TO pred(kCOUNT) DO
-//
-//                                           BEGIN
-//                                             zeichen := '_';
-//                                             zeichen2 := '_';
-//                                             scancodefeld[lauf] := KeyBoardDataArray[lauf].scancode;
-//                                             str(lauf, zeichen);
-//                                             str(scancodefeld[lauf], zeichen2);
-//
-//
-//                                             GraphicsWindowDrawChar(GraphicHandle1, KeyBoardDataArray[lauf].charcode, 100 + lauf * 20, 800);
-////                                             GraphicsWindowDrawText(GraphicHandle1, zeichen,  100 + lauf * 20, 820);
-//                                             GraphicsWindowDrawText(GraphicHandle1, zeichen2, 100 + lauf * 20, 840);
-//
-//                                           end;
-//                                    risc.keyboard_input(scancodefeld, pred(KCount));
-//                                  END;
-//                     end;
-
-
+              mykeyboard2;
+              sleep(1);
+//              mymouse;
+              mykeyboard2;
               toggleLED;
               risc.run(CPU_HZ DIV FPS);
               inc(counter);
@@ -390,7 +429,8 @@ PROCEDURE main;
               frame_end := getTickCount64 - starttime;
               mydelay := frame_start + (1000 div FPS) - frame_end;
 
-              IF mydelay > 0 THEN sleep(mydelay);
+              IF ((mydelay > 0) AND (mydelay < 20)) THEN sleep(mydelay);
+
 
 
 
@@ -408,31 +448,15 @@ PROCEDURE main;
 
 begin
 
-      MouseInit;
-     KeyboardInit;
-
-     ConsoleInit;
-     GraphicsConsoleInit;
-//   writeln('Framebuffer initialisiert');
-   // GraphicsConsoleInit;
      GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
-//     WindowHandleX := ConsoleWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_BOTTOM, True);
-
-//     writeln('weiter mit Taste');
-
-//   GraphicsWindowDrawText(GraphicHandle1,'Marke 1',20,20);
-//   GraphicsWindowShow(GraphicHandle1);
-//   IF GraphicsWindowSetViewPort(GraphicHandle1, 10, 10, RISC_SCREEN_WIDTH+10, RISC_SCREEN_HEIGHT+10) = ERROR_SUCCESS THEN  GraphicsWindowDrawLine(GraphicHandle1, 10, 10, 100, 10, COLOR_RED, 2);
-{Set the rectangle X1,Y1,X2,Y2 of the window viewport for an existing console window}
-{Handle: The handle of the window to set the rectangle for}
-{Rect: The rectangle to set for the window viewport}
-{Return: ERROR_SUCCESS if completed or another error code on failure}
 
 
     init_texture;
-//    ConsoleWindowWriteln(WindowHandleX, 'texture buffer filled');
 
-//    ConsoleWindowWriteln(WindowHandleX, 'Jetzt nach main... ?');
+//    ActivityLEDEnable;
+
+    //REPEAT
+    //until mykeyboard2 = 20;
 
     main;
 
