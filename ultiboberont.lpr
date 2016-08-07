@@ -43,7 +43,7 @@ uses
   BCM2709,
 
   SysUtils,
-//  Mouse,
+  Mouse,
 //  Keymap_DE,
   Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
@@ -265,55 +265,55 @@ PROCEDURE mykeyboard;
 
 
 
-//PROCEDURE mymouse;
-//          VAR
-//                     MouseData:TMouseData;
-//                     mcount : longword;
-//
-//
-//        BEGIN
+PROCEDURE mymouse;
+          VAR
+                     MouseData:TMouseData;
+                     mcount : longword;
+
+
+        BEGIN
 //        IF MousePeek = ERROR_SUCCESS THEN
 //             BEGIN
-//             if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
-//                    begin
-//                           neux := altx + MouseData.OffsetX;
-//                           neuy := alty + MouseData.OffsetY;
-//                           neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
-//                           neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
-//                           IF ((neux <> altx) OR (neuy <> alty)) THEN risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
-//                           altx := neux;
-//                           alty := neuy;
-//                           IF MouseData.Buttons <> 0 THEN
-//
-//                                                BEGIN
-//                                                mybutton := 0;
-//                                                IF (MouseData.Buttons and MOUSE_LEFT_BUTTON)   <> 0 THEN mybutton := 1;
-//                                                IF (MouseData.Buttons and MOUSE_MIDDLE_BUTTON) <> 0 THEN mybutton := 2;
-//                                                IF (MouseData.Buttons and MOUSE_RIGHT_BUTTON)  <> 0 THEN mybutton := 3;
-//                                                IF mybutton > 0 THEN
-//                                                                     BEGIN
-//                                                                     risc.mouse_button(mybutton, True);
-//                                                                     end;
-//
-//                                                end
-//                                              ELSE
-//                                                BEGIN
-//                                                IF mybutton > 0 THEN
-//                                                            BEGIN
-//                                                            risc.mouse_button(mybutton, False);
-//                                                            mybutton := 0;
-//                                                            end;
-//                                                end;
-//
+             if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
+                    begin
+                           neux := altx + MouseData.OffsetX;
+                           neuy := alty + MouseData.OffsetY;
+                           neux := clamp(neux, 0, RISC_SCREEN_WIDTH);
+                           neuy := clamp(neuy, 0, RISC_SCREEN_HEIGHT);
+                           IF ((neux <> altx) OR (neuy <> alty)) THEN risc.mouse_moved(neux, RISC_SCREEN_HEIGHT-neuy -1);
+                           altx := neux;
+                           alty := neuy;
+                           IF MouseData.Buttons <> 0 THEN
+
+                                                BEGIN
+                                                mybutton := 0;
+                                                IF (MouseData.Buttons and MOUSE_LEFT_BUTTON)   <> 0 THEN mybutton := 1;
+                                                IF (MouseData.Buttons and MOUSE_MIDDLE_BUTTON) <> 0 THEN mybutton := 2;
+                                                IF (MouseData.Buttons and MOUSE_RIGHT_BUTTON)  <> 0 THEN mybutton := 3;
+                                                IF mybutton > 0 THEN
+                                                                     BEGIN
+                                                                     risc.mouse_button(mybutton, True);
+                                                                     end;
+
+                                                end
+                                              ELSE
+                                                BEGIN
+                                                IF mybutton > 0 THEN
+                                                            BEGIN
+                                                            risc.mouse_button(mybutton, False);
+                                                            mybutton := 0;
+                                                            end;
+                                                end;
+
 //                           MouseFlush;
-//
-//                    end;
-//
+
+                    end;
+
 //             end; (* end MousePeek *)
-//
-//
-//
-//          end;
+
+
+
+          end;
 
 FUNCTION mykeyboard2 : longword;
 
@@ -419,7 +419,8 @@ PROCEDURE main;
               risc.set_time(frame_start);
               mykeyboard2;
               sleep(1);
-//              mymouse;
+              mymouse;
+              sleep(1);
               mykeyboard2;
               toggleLED;
               risc.run(CPU_HZ DIV FPS);
