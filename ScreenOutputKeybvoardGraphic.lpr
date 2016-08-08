@@ -39,6 +39,7 @@ program ScreenOutputKeybvoardGraphic;
 uses
   GlobalConst,
   GlobalTypes,
+  GlobalConfig,
   Platform,
   Threads,
   Console,
@@ -46,13 +47,41 @@ uses
   BCM2836,
   BCM2709,
   SysUtils,
-  Mouse,
+  USB,
+//  Mouse,
   keyboard,
            //  Keyboard, {Keyboard uses USB so that will be included automatically}
-  DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
-  linecircle;
+  DWCOTG;          {We need to include the USB host driver for the Raspberry Pi}
+//  linecircle;
 
 
+
+type
+  {Matrix-Screen specific clases}
+  TConIn = class(TObject)
+    public
+         pKeyCode : Word;
+     pModifier: LongWord;
+     pScanCode : Word;
+
+    {Public Properties}
+     Thread1Handle : TThreadHandle;
+     Lock : TMutexHandle;
+     {Public Methods}
+     constructor Create;
+     function myReadKey : Byte;
+     destructor Destroy;
+     private
+     {Internal Variables}
+     meinKeyCode : word;
+     meinModifier : longWord;
+     meinScanCode : Word;
+     {Internal Methods}
+   protected
+     {Internal Variables}
+     {Internal Methods}
+
+   end;
 
 
 {We'll need a few more variables for this example.}
@@ -62,9 +91,10 @@ var
  Handle1:TWindowHandle;
  altx, alty, neux, neuy : longint;
  Count:LongWord;
- MouseData:TMouseData;
+// MouseData:TMouseData;
  ScreenWidth, ScreenHeight : LongWord;
  maxheight, maxwidth : LongInt;
+ mytconin : TConIn;
 
 
 
@@ -76,53 +106,156 @@ var
         Count : longword;
 
           BEGIN
+          mykeyboard := False;
+//          IF KeyboardPeek = ERROR_NO_MORE_ITEMS THEN exit;
+          IF KeyboardPeek = ERROR_SUCCESS THEN
+             BEGIN
 
-          IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
+              IF (KeyboardReadEx(@KeyboardData,SizeOf(KeyboardData), KEYBOARD_FLAG_NON_BLOCK, Count) = ERROR_SUCCESS) THEN
 
-                BEGIN
+                    BEGIN
 
-                  ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4));
-                  ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4));
-                  ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4));
-                  ConsoleWindowWriteLn(Handle1,' ');
+                      ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4));
+                      ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4));
+                      ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4));
+                      ConsoleWindowWriteLn(Handle1,' ');
 
-                end;
+                    end;
 
 
 
-           mykeyboard := (keyboardData.KeyCode = 13);
+               mykeyboard := (keyboardData.KeyCode = 13);
+
+             end;
           END;
+
+function Thread1Execute(Parameter:Pointer):PtrInt;
+var
+  KeyBoardData : TKeyboardData;
+  Count : longword;
+  ledon : Boolean;
+
+
+begin
+  Thread1Execute:=0;
+
+  while True do
+        begin
+              IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
+
+                          BEGIN
+
+                            //ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4));
+                            //ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4));
+                            //ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4));
+                            //ConsoleWindowWriteLn(Handle1,' ');
+
+
+
+                                    mytconin.meinKeyCode :=  KeyBoardData.KeyCode;
+                                    mytconin.meinModifier := KeyBoardData.Modifiers;
+                                    mytconin.meinScanCode := KeyBoardData.ScanCode;
+                                    ledon := NOT(ledon);
+                                    IF ledon THEN ActivityLEDON ELSE ActivityLEDOff;
+
+
+                            END;
+
+        sleep(5);
+        end; { while True do begin }
+
+     end; { function Thread1Execute }
+
+{==============================================================================}
+{TConIn}
+constructor TConIn.Create;
+begin
+ {}
+ inherited Create;
+  Lock:=MutexCreate;
+  pKeyCode := 0;
+  pScancode := 0;
+  pModifier := 0;
+  meinKeyCode := 0;
+  meinScancode := 0;
+  meinModifier := 0;
+
+ Thread1Handle:=BeginThread(@Thread1Execute,nil,Thread1Handle,THREAD_STACK_DEFAULT_SIZE);
+
+end; { constructor TConIn.Create }
+
+
+
+{==============================================================================}
+{==============================================================================}
+{TConIn}
+function TConIn.myReadKey : Byte;
+
+begin
+
+
+
+           myReadKey := meinKeyCode;
+           pKeycode := meinKeyCode;
+           pModifier := meinModifier;
+           pScancode := meinScanCode;
+  sleep(1);
+
+end; { function TConIn.ReadKey }
+
+
+
+
+
+
+
+
+destructor  TConIn.Destroy;
+begin
+
+  MutexDestroy(Lock);
+
+  inherited Destroy;
+end; { destructor  TConIn.Destroy }
+
+
+
 
 
 FUNCTION mymouse : Boolean;
 
-         BEGIN
+      BEGIN
 
+      mymouse := False;
+//       IF MousePeek = ERROR_NO_MORE_ITEMS THEN exit;
+//       IF MousePeek = ERROR_SUCCESS THEN
+//             BEGIN
+               //if MouseReadEx(@MouseData,SizeOf(MouseData),MOUSE_FLAG_NON_BLOCK, Count) = ERROR_SUCCESS then
+               //     begin
+               //        neux := altx + MouseData.OffsetX;
+               //        neuy := alty + MouseData.OffsetY;
+               //        IF neux > maxwidth THEN neux := maxWidth;
+               //        IF neuy > maxHeight THEN neuy := maxHeight;
+               //        IF neux < 0 THEN neux := 0;
+               //        IF neux < 0 THEN neuy := 0;
+               //        CursorSetState(True,neuX,neuY,False);
+               //
+               //       if (MouseData.Buttons and MOUSE_LEFT_BUTTON) <> 0 then
+               //          begin
+               //                 line(altx, alty, neux, neuy, COLOR_RED);
+               //          END;
+               //        altx := altx + MouseData.Offsetx;
+               //        alty := alty + MouseData.OffsetY;
+               //        IF altx > maxWidth THEN altx := maxwidth;
+               //        IF alty > maxHeight THEN alty := maxHeight;
+               //        IF altx < 0 THEN altx := 0;
+               //        IF alty < 0 THEN alty := 0;
+               //
+               //     end;
+               //
+               // mymouse := ((MouseData.Buttons AND MOUSE_RIGHT_BUTTON) <> 0);
 
-         if MouseRead(@MouseData,SizeOf(MouseData),Count) = ERROR_SUCCESS then
-              begin
-                 neux := altx + MouseData.OffsetX;
-                 neuy := alty + MouseData.OffsetY;
-                 IF neux > maxwidth THEN neux := maxWidth;
-                 IF neuy > maxHeight THEN neuy := maxHeight;
-                 IF neux < 0 THEN neux := 0;
-                 IF neux < 0 THEN neuy := 0;
-                 CursorSetState(True,neuX,neuY,False);
-
-                if (MouseData.Buttons and MOUSE_LEFT_BUTTON) <> 0 then
-                   begin
-                          line(altx, alty, neux, neuy, COLOR_RED);
-                   END;
-                 altx := altx + MouseData.Offsetx;
-                 alty := alty + MouseData.OffsetY;
-                 IF altx > maxWidth THEN altx := maxwidth;
-                 IF alty > maxHeight THEN alty := maxHeight;
-                 IF altx < 0 THEN altx := 0;
-                 IF alty < 0 THEN alty := 0;
-
-              end;
-
-          mymouse := ((MouseData.Buttons AND MOUSE_RIGHT_BUTTON) <> 0);
+//          end;
          END;
 
 
@@ -145,7 +278,7 @@ begin
    end;
 
  // Now try to load a new cursorshape from the disk, otherwise take the default mycursor
- CreateCursor;
+// CreateCursor;
 
  // writeln seems to work as well
  writeln('Press the left mouse button to draw a line, press the right mouse button to terminate the program');
@@ -160,32 +293,39 @@ begin
 
   ConsoleWindowSetX(Handle1,altx);
   ConsoleWindowSetY(Handle1,alty);
-  CursorSetState(True,altx, alty,False);
+//  CursorSetState(True,altx, alty,False);
 
   Count := 0;
+  mytconin.create;
   sleep(1000);
+  ActivityLEDenable;
   writeln('Now only kyboard input. Please finish keyboard input with Enter');
   REPEAT
-  sleep(2);
-  UNTIL mykeyboard;
-
   sleep(1000);
-  writeln('Now only mouse input. Please the mouse function with the right mouse button');
-  REPEAT
-  sleep(2);
-  UNTIL mymouse;
-
-
-
-  writeln('Now mouse and keyboard.');
-  writeln('You may see that the keyboard input is moving the mouse and keyboard input only works if the mouse is moved???');
-  sleep(1000);
-  REPEAT
-  sleep(2);
-  mymouse;
-  sleep(2);
-  mykeyboard;
+  mytconin.myReadKey;
+  ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(mytconin.pKeyCode,4));
+  ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(mytconin.pModifier,4));
+  ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(mytconin.pScanCode,4));
+  ConsoleWindowWriteLn(Handle1,' ');
   UNTIL False;
+
+  //sleep(1000);
+  //writeln('Now only mouse input. Please the mouse function with the right mouse button');
+  //REPEAT
+  //sleep(2);
+  //UNTIL mymouse;
+  //
+  //
+  //
+  //writeln('Now mouse and keyboard.');
+  //writeln('You may see that the keyboard input is moving the mouse and keyboard input only works if the mouse is moved???');
+  //sleep(1000);
+  //REPEAT
+  //sleep(2);
+  //mymouse;
+  //sleep(2);
+  //mykeyboard;
+  //UNTIL False;
 
 
  // my end
