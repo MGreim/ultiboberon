@@ -2,6 +2,14 @@ program ScreenOutputKeybvoardGraphic;
 
 {$mode objfpc}{$H+}
 
+//09.aug.2016
+//If the keyboard is on a hub and the mouse directly connected evrything works fine.
+//- also keyboard reading by an own thread is now working
+//- modifier is 4100 if button is pressed, 8100 if holded and 2100 if released
+//- some strange effects when used class instead of object, maybe some missing units.
+// - so in the mext step I would include mouse and keaboard in a single thread
+//  and the include it into ultiboberon
+
 //07.aug.2016 MG
 //- There seems to be a problem with parallel using USB moude and
 //keyboard. Each single function works fine, but not if they are in the same loop.
@@ -69,28 +77,24 @@ uses
 
 type
   {Matrix-Screen specific clases}
-  TConIn = class(TObject)
+  TConIn = object
     public
          pKeyCode : Word;
      pModifier: LongWord;
      pScanCode : Word;
-
+     wartaste : Boolean;
     {Public Properties}
      Thread1Handle : TThreadHandle;
      Lock : TMutexHandle;
      {Public Methods}
      constructor Create;
-     function myReadKey : Byte;
+     function myReadKey : Boolean;
      destructor Destroy;
      private
      {Internal Variables}
      meinKeyCode : word;
      meinModifier : longWord;
      meinScanCode : Word;
-     {Internal Methods}
-   protected
-     {Internal Variables}
-     {Internal Methods}
 
    end;
 
@@ -125,7 +129,6 @@ var
               IF (KeyboardReadEx(@KeyboardData,SizeOf(KeyboardData), KEYBOARD_FLAG_NON_BLOCK, Count) = ERROR_SUCCESS) THEN
 
                     BEGIN
-
                       ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4));
                       ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4));
                       ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4));
@@ -152,27 +155,41 @@ begin
 
   while True do
         begin
+        mytconin.wartaste := False;
               IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
 
                           BEGIN
+                            ledon := NOT(ledon);
+                            IF ledon THEN ActivityLEDON ELSE ActivityLEDOff;
+
 
                             //ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4));
                             //ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4));
                             //ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4));
                             //ConsoleWindowWriteLn(Handle1,' ');
 
+                         if MutexLock(mytconin.Lock) = ERROR_SUCCESS then begin
 
-
+                                  try
+                                    BEGIN
+                                    mytconin.wartaste := True;
                                     mytconin.meinKeyCode :=  KeyBoardData.KeyCode;
                                     mytconin.meinModifier := KeyBoardData.Modifiers;
                                     mytconin.meinScanCode := KeyBoardData.ScanCode;
-                                    ledon := NOT(ledon);
-                                    IF ledon THEN ActivityLEDON ELSE ActivityLEDOff;
+                                    end;
+
+                                  finally
+                                    MutexUnlock(mytconin.Lock);
+                                  end;
+
+                                end; { if MutexLock(CPM_CONIN.Lock) = ERROR_SUCCESS then }
+
 
 
                             END;
 
-        sleep(5);
+
+          sleep(50);
         end; { while True do begin }
 
      end; { function Thread1Execute }
@@ -182,8 +199,32 @@ begin
 constructor TConIn.Create;
 begin
  {}
- inherited Create;
+// inherited Create;
+ConsoleWindowWriteLn(Handle1,'Now in Create Thread');
   Lock:=MutexCreate;
+  ConsoleWindowWriteLn(Handle1,'Now Mutex Created');
+
+ Thread1Handle:=BeginThread(@Thread1Execute,nil,Thread1Handle,THREAD_STACK_DEFAULT_SIZE);
+
+   ConsoleWindowWriteLn(Handle1,'Now Thread1Handle active');
+
+
+ if Thread1Handle = INVALID_HANDLE_VALUE then
+  begin
+   {If the thread handle is not valid then BeginThread failed}
+   ConsoleWindowWriteLn(Handle1,'Failed to create Thread1');
+  end
+ else
+  begin
+   {Otherwise the thread was created and will start running soon, we have a handle
+    to reference it if we want. The Thread1Execute function is in the Thread1 unit,
+    have a look there to see what it is will be doing.}
+   ConsoleWindowWriteLn(Handle1,'Thread1 was created successfully, the handle is ' + IntToHex(Thread1Handle,8));
+
+   {Let's wait a bit to see what happens}
+   Sleep(2000);
+  end;
+
   pKeyCode := 0;
   pScancode := 0;
   pModifier := 0;
@@ -191,7 +232,8 @@ begin
   meinScancode := 0;
   meinModifier := 0;
 
- Thread1Handle:=BeginThread(@Thread1Execute,nil,Thread1Handle,THREAD_STACK_DEFAULT_SIZE);
+
+
 
 end; { constructor TConIn.Create }
 
@@ -200,17 +242,28 @@ end; { constructor TConIn.Create }
 {==============================================================================}
 {==============================================================================}
 {TConIn}
-function TConIn.myReadKey : Byte;
+function TConIn.myReadKey : Boolean;
 
 begin
+   myReadkey := False;
+  if MutexLock(Lock) = ERROR_SUCCESS then
+   begin
+    try
+      IF wartaste THEN
+       BEGIN
+          pKeyCode := meinKeyCode;
+          pModifier := meinModifier;
+          pScancode := meinScanCode;
+          myReadKey := wartaste;
+       end;
+
+    finally
+      MutexUnlock(Lock);
+    end;
+  end;
 
 
-
-           myReadKey := meinKeyCode;
-           pKeycode := meinKeyCode;
-           pModifier := meinModifier;
-           pScancode := meinScanCode;
-  sleep(1);
+  sleep(10);
 
 end; { function TConIn.ReadKey }
 
@@ -226,7 +279,6 @@ begin
 
   MutexDestroy(Lock);
 
-  inherited Destroy;
 end; { destructor  TConIn.Destroy }
 
 
@@ -289,10 +341,9 @@ begin
    end;
 
  // Now try to load a new cursorshape from the disk, otherwise take the default mycursor
-   CreateCursor;
+//   CreateCursor;
 
  // writeln seems to work as well
- writeln('Press the left mouse button to draw a line, press the right mouse button to terminate the program');
 
 //   We'll use a couple of variables to track the position in response to mouse messages}
 
@@ -306,19 +357,28 @@ begin
   ConsoleWindowSetY(Handle1,alty);
   CursorSetState(True,altx, alty,False);
 
-  Count := 0;
-//  mytconin.create;
-  sleep(1000);
   ActivityLEDenable;
-  writeln('Now only kyboard input. Please finish keyboard input with Enter');
-  //REPEAT
-  //sleep(1000);
-  //mytconin.myReadKey;
-  //ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(mytconin.pKeyCode,4));
-  //ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(mytconin.pModifier,4));
-  //ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(mytconin.pScanCode,4));
-  //ConsoleWindowWriteLn(Handle1,' ');
-  //UNTIL False;
+
+  Count := 0;
+  writeln('Now try to start the thread1');
+
+  mytconin.create;
+
+  sleep(1000);
+  writeln('Now only kyboard input with Thread. Please finish keyboard input with Enter');
+  REPEAT
+//  sleep(1000);
+  IF mytconin.myReadKey THEN
+     BEGIN
+        ConsoleWindowWriteLn(Handle1, 'KeyboardData.KeyCode   = ' + IntToHex(mytconin.pKeyCode,4));
+        ConsoleWindowWriteLn(Handle1, 'KeyboardData.Modifiers = ' + IntToHex(mytconin.pModifier,4));
+        ConsoleWindowWriteLn(Handle1, 'KeyboardData.ScanCode  = ' + IntToHex(mytconin.pScanCode,4));
+        ConsoleWindowWriteLn(Handle1,' ');
+     end;
+  UNTIL False;
+
+    writeln('Now only kyboard input with Thread. Please finish keyboard input with Enter');
+
 
   REPEAT
   sleep(100);
