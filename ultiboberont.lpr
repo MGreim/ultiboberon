@@ -43,12 +43,24 @@ uses
   BCM2709,
 
   SysUtils,
+  // With this block ogf units we can update
+  //the SD card via telnet. The remote computer is xx.29
+  //the path is /var/www
+  //unfortunately a sunbdirectory doesnt work with my apche2
+//----------------------------------------------------------------------
+ Shell,           {Add the Shell unit just for some fun}
+ ShellFileSystem, {Plus the File system shell commands}
+ ShellUpdate,     //<- Add this extra one to enable the update commands
+ RemoteShell,     {And the RemoteShell unit so we can Telnet to our Pi}
+ SMSC95XX,        {And the driver for the Raspberry Pi network adapter}
+//--------------------------------------------------------------
+
   Mouse,
 //  Keymap_DE,
   Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
 
-  risccore, riscglob;
+  risccore, riscglob, riscps2;
 
 const
 BLACK = $657b83;
@@ -272,8 +284,8 @@ PROCEDURE mymouse;
 
 
         BEGIN
-//        IF MousePeek = ERROR_SUCCESS THEN
-//             BEGIN
+        IF MousePeek = ERROR_SUCCESS THEN
+             BEGIN
              if MouseRead(@MouseData,SizeOf(MouseData),mCount) = ERROR_SUCCESS then
                     begin
                            neux := altx + MouseData.OffsetX;
@@ -305,11 +317,11 @@ PROCEDURE mymouse;
                                                             end;
                                                 end;
 
-//                           MouseFlush;
+                           MouseFlush;
 
                     end;
 
-//             end; (* end MousePeek *)
+             end; (* end MousePeek *)
 
 
 
@@ -327,14 +339,40 @@ FUNCTION mykeyboard2 : longword;
         KeyBoardData : TKeyboardData;
         Count : longword;
         lauf : integer;
+        mymode_ : word;
+        mymake  : Boolean;
+
+       scancode_s : string;
+       len : 0..pred(maxkeybufsize);
+       l   : 0..pred(maxkeybufsize);
+       scancode: keybufty;
 
 
+
+  // original Oberon Code for Control recognition
+  // PROCEDURE Peek();
+  //BEGIN
+  //  IF SYSTEM.BIT(msAdr, 28) THEN
+  //    SYSTEM.GET(kbdAdr, kbdCode);
+  //    IF kbdCode = 0F0H THEN Up := TRUE
+  //    ELSIF kbdCode = 0E0H THEN Ext := TRUE
+  //    ELSE
+  //      IF (kbdCode = 12H) OR (kbdCode = 59H) THEN (*shift*) Shift := ~Up
+  //      ELSIF kbdCode = 14H THEN (*ctrl*) Ctrl := ~Up
+  //      ELSIF ~Up THEN Recd := TRUE (*real key going down*)
+  //      END ;
+  //      Up := FALSE; Ext := FALSE
+  //    END
+  //  END;
+  //END Peek;
 
 
 
           BEGIN
+          IF keyboardPeek = ERROR_SUCCESS THEN
+                      BEGIN
 
-          IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
+                      IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
 
                                   BEGIN
 
@@ -342,12 +380,13 @@ FUNCTION mykeyboard2 : longword;
                                   GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
 
 
-                                  GraphicsWindowDrawText(GraphicHandle1, 'Count                  = ' + IntToHex(Count,4), left, 100 + lauf * abstand);
+                                  GraphicsWindowDrawText(GraphicHandle1, 'Char                  = ' + IntToHex(Count,4), left, 100 + lauf * abstand);
                                   inc(lauf);
 
+                                  // KeyCode = Character übersetzt mit Keymap
                                   GraphicsWindowDrawText(GraphicHandle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4), left, 100 + lauf * abstand);
                                   inc(lauf);
-                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,4) , left, 100 + lauf * abstand);
+                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,8) , left, 100 + lauf * abstand);
                                   inc(lauf);
                                   GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4) , left, 100 + lauf * abstand);
                                   inc(lauf);
@@ -357,12 +396,71 @@ FUNCTION mykeyboard2 : longword;
 
                                   IF lauf > 40 THEN lauf := 38;
 
+                                  mymake := ((KeyboardData.Modifiers AND $4000) > 0) OR ((KeyboardData.Modifiers AND $8000) > 0); // $4000 = keypressed $8000 = repeat
+                                  mymode_ := KeyboardData.Modifiers AND $0FFF;
+                                  len := ps2_encode(KeyboardData.ScanCode,mymake, mymode_, scancode_s);
+                                            IF len > 0 THEN
+
+                                                BEGIN
+                                                FOR l := 0 TO pred(len) DO
+
+                                                        BEGIN
+                                                        scancode[l] := ord(scancode_s[succ(l)]);
+                                                      (*  write('|',scancode[l]); *)
+                                                        END;
+                                                 END;
+                                        risc.keyboard_input(scancode, len);
+
+
                                   end;
 
+                      end;
 
+          END;
+
+
+
+FUNCTION mykeyboard3 : longword;
+
+
+          CONST
+               abstand = 18;
+               left = 50;
+
+          VAR
+
+          lauf : integer;
+          c1, c2 : char;
+
+
+
+          BEGIN
+          c1 := #0;
+          c2 := #0;
+          IF ConsoleKeypressed THEN
+                      BEGIN
+                      c1 := ConsoleReadKey;
+                      IF c1 = #0 THEN c2 := ConsoleReadKey;
+
+
+                      lauf := 38;
+                      GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
+
+                      GraphicsWindowDrawText(GraphicHandle1, 'C1                  = ' + IntToHex(ord(C1),4), left, 100 + lauf * abstand);
+                      inc(lauf);
+
+                      GraphicsWindowDrawText(GraphicHandle1, 'C2                  = ' + IntToHex(ord(C2),4), left, 100 + lauf * abstand);
+                      inc(lauf);
+
+                      IF lauf > 40 THEN lauf := 38;
+
+                      end;
 
 
           END;
+
+
+
 
 PROCEDURE main;
 
@@ -420,8 +518,6 @@ PROCEDURE main;
               mykeyboard2;
               sleep(1);
               mymouse;
-              sleep(1);
-              mykeyboard2;
               toggleLED;
               risc.run(CPU_HZ DIV FPS);
               inc(counter);
@@ -451,13 +547,7 @@ begin
 
      GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
 
-
     init_texture;
-
-//    ActivityLEDEnable;
-
-    //REPEAT
-    //until mykeyboard2 = 20;
 
     main;
 
