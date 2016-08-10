@@ -293,7 +293,24 @@ const
   KMOD_ALT=KMOD_LALT or KMOD_RALT;
   KMOD_GUI=KMOD_LGUI or KMOD_RGUI;
 
-
+ KEYBOARD_LEFT_CTRL    =  $00000001; {The Left Control key is pressed}
+ KEYBOARD_LEFT_SHIFT   =  $00000002; {The Left Shift key is pressed}
+ KEYBOARD_LEFT_ALT     =  $00000004; {The Left Alt key is pressed}
+ KEYBOARD_LEFT_GUI     =  $00000008; {The Left GUI (or Windows) key is pressed}
+ KEYBOARD_RIGHT_CTRL   =  $00000010; {The Right Control key is pressed}
+ KEYBOARD_RIGHT_SHIFT  =  $00000020; {The Right Shift key is pressed}
+ KEYBOARD_RIGHT_ALT    =  $00000040; {The Right Alt key is pressed}
+ KEYBOARD_RIGHT_GUI    =  $00000080; {The Right GUI (or Windows) key is pressed}
+ KEYBOARD_NUM_LOCK     =  $00000100; {Num Lock is currently on}
+ KEYBOARD_CAPS_LOCK    =  $00000200; {Caps Lock is currently on}
+ KEYBOARD_SCROLL_LOCK  =  $00000400; {Scroll Lock is currently on}
+ KEYBOARD_COMPOSE      =  $00000800; {Compose is currently on}
+ KEYBOARD_KANA         =  $00001000; {Kana is currently on}
+ KEYBOARD_KEYUP        =  $00002000; {The key state changed to up}
+ KEYBOARD_KEYDOWN      =  $00004000; {The key state changed to down}
+ KEYBOARD_KEYREPEAT    =  $00008000; {The key is being repeated}
+ KEYBOARD_DEADKEY      =  $00010000; {The key is a being handled as a deadkey}
+ KEYBOARD_ALTGR        =  $00020000; {The AltGr key is pressed (Normally also Right Alt but may be Ctrl-Alt)}
 
 TYPE
 
