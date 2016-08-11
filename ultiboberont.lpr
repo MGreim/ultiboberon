@@ -397,8 +397,10 @@ FUNCTION mykeyboard2 : longword;
                                   IF lauf > 40 THEN lauf := 38;
                                   mymode_ := 0;
                                   mymake := False;
-                                  mymake := NOT(((KeyboardData.Modifiers AND $4000) > 0) OR ((KeyboardData.Modifiers AND $8000) > 0)); // $4000 = keypressed $8000 = repeat
-                                  mymode_ := KeyboardData.Modifiers AND $0FFF;
+                                  IF ((KeyboardData.Modifiers AND $4000) > 0)  THEN mymake := true;
+                                  IF ((KeyboardData.Modifiers AND $2000) > 0)  THEN mymake := False;
+                                  // $4000 = keypressed $8000 = repeat
+                                  mymode_ := KeyboardData.Modifiers AND $000FFF;
                                   len := ps2_encode(KeyboardData.ScanCode,mymake, mymode_, scancode_s);
                                             IF len > 0 THEN
 

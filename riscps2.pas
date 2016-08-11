@@ -11,6 +11,8 @@ FUNCTION ps2_encode(sdl_scancode: integer;  make: boolean;  mod_ : word; VAR out
 
 IMPLEMENTATION
 
+USES keyboard;
+
 const
   SDL_SCANCODE_UNKNOWN=0;
 
@@ -274,43 +276,43 @@ const
 
   SDL_NUM_SCANCODES=512;
 
-  KMOD_NONE=$0000;
-  KMOD_LSHIFT=$0002;
-  KMOD_RSHIFT=$0020;
-  KMOD_LCTRL=$0001;
-  KMOD_RCTRL=$0010;
-  KMOD_LALT=$0004;
-  KMOD_RALT=$0040;
-  KMOD_LGUI=$0008;
-  KMOD_RGUI=$0080;
-  KMOD_NUM=$0100;
-  KMOD_CAPS=$0200;
-  KMOD_MODE=$4000;
-  KMOD_RESERVED=$8000;
+  //KMOD_NONE=$0000;
+  //KMOD_LSHIFT=$0002;
+  //KMOD_RSHIFT=$0020;
+  //KMOD_LCTRL=$0001;
+  //KMOD_RCTRL=$0010;
+  //KMOD_LALT=$0004;
+  //KMOD_RALT=$0040;
+  //KMOD_LGUI=$0008;
+  //KMOD_RGUI=$0080;
+  //KMOD_NUM=$0100;
+  //KMOD_CAPS=$0200;
+  //KMOD_MODE=$4000;
+  //KMOD_RESERVED=$8000;
+  //
+  //KMOD_CTRL=KMOD_LCTRL or KMOD_RCTRL;
+  //KMOD_SHIFT=KMOD_LSHIFT or KMOD_RSHIFT;
+  //KMOD_ALT=KMOD_LALT or KMOD_RALT;
+  //KMOD_GUI=KMOD_LGUI or KMOD_RGUI;
 
-  KMOD_CTRL=KMOD_LCTRL or KMOD_RCTRL;
-  KMOD_SHIFT=KMOD_LSHIFT or KMOD_RSHIFT;
-  KMOD_ALT=KMOD_LALT or KMOD_RALT;
-  KMOD_GUI=KMOD_LGUI or KMOD_RGUI;
-
- KEYBOARD_LEFT_CTRL    =  $00000001; {The Left Control key is pressed}
- KEYBOARD_LEFT_SHIFT   =  $00000002; {The Left Shift key is pressed}
- KEYBOARD_LEFT_ALT     =  $00000004; {The Left Alt key is pressed}
- KEYBOARD_LEFT_GUI     =  $00000008; {The Left GUI (or Windows) key is pressed}
- KEYBOARD_RIGHT_CTRL   =  $00000010; {The Right Control key is pressed}
- KEYBOARD_RIGHT_SHIFT  =  $00000020; {The Right Shift key is pressed}
- KEYBOARD_RIGHT_ALT    =  $00000040; {The Right Alt key is pressed}
- KEYBOARD_RIGHT_GUI    =  $00000080; {The Right GUI (or Windows) key is pressed}
- KEYBOARD_NUM_LOCK     =  $00000100; {Num Lock is currently on}
- KEYBOARD_CAPS_LOCK    =  $00000200; {Caps Lock is currently on}
- KEYBOARD_SCROLL_LOCK  =  $00000400; {Scroll Lock is currently on}
- KEYBOARD_COMPOSE      =  $00000800; {Compose is currently on}
- KEYBOARD_KANA         =  $00001000; {Kana is currently on}
- KEYBOARD_KEYUP        =  $00002000; {The key state changed to up}
- KEYBOARD_KEYDOWN      =  $00004000; {The key state changed to down}
- KEYBOARD_KEYREPEAT    =  $00008000; {The key is being repeated}
- KEYBOARD_DEADKEY      =  $00010000; {The key is a being handled as a deadkey}
- KEYBOARD_ALTGR        =  $00020000; {The AltGr key is pressed (Normally also Right Alt but may be Ctrl-Alt)}
+ //KEYBOARD_LEFT_CTRL    =  $00000001; {The Left Control key is pressed}
+ //KEYBOARD_LEFT_SHIFT   =  $00000002; {The Left Shift key is pressed}
+ //KEYBOARD_LEFT_ALT     =  $00000004; {The Left Alt key is pressed}
+ //KEYBOARD_LEFT_GUI     =  $00000008; {The Left GUI (or Windows) key is pressed}
+ //KEYBOARD_RIGHT_CTRL   =  $00000010; {The Right Control key is pressed}
+ //KEYBOARD_RIGHT_SHIFT  =  $00000020; {The Right Shift key is pressed}
+ //KEYBOARD_RIGHT_ALT    =  $00000040; {The Right Alt key is pressed}
+ //KEYBOARD_RIGHT_GUI    =  $00000080; {The Right GUI (or Windows) key is pressed}
+ //KEYBOARD_NUM_LOCK     =  $00000100; {Num Lock is currently on}
+ //KEYBOARD_CAPS_LOCK    =  $00000200; {Caps Lock is currently on}
+ //KEYBOARD_SCROLL_LOCK  =  $00000400; {Scroll Lock is currently on}
+ //KEYBOARD_COMPOSE      =  $00000800; {Compose is currently on}
+ //KEYBOARD_KANA         =  $00001000; {Kana is currently on}
+ //KEYBOARD_KEYUP        =  $00002000; {The key state changed to up}
+ //KEYBOARD_KEYDOWN      =  $00004000; {The key state changed to down}
+ //KEYBOARD_KEYREPEAT    =  $00008000; {The key is being repeated}
+ //KEYBOARD_DEADKEY      =  $00010000; {The key is a being handled as a deadkey}
+ //KEYBOARD_ALTGR        =  $00020000; {The AltGr key is pressed (Normally also Right Alt but may be Ctrl-Alt)}
 
 TYPE
 
@@ -329,10 +331,12 @@ keymapty = ARRAY[0..Pred(SDL_NUM_SCANCODES)] of k_infoty;
 VAR
 keymap : keymapty;
 
+
 function ps2_encode(sdl_scancode: integer;  make: boolean; mod_ : word; VAR outs : string): integer;
 
     VAR codes : char;
         info : k_infoty;
+        mymode : modety;
 
     BEGIN
          info := keymap[sdl_scancode];
@@ -340,55 +344,38 @@ function ps2_encode(sdl_scancode: integer;  make: boolean; mod_ : word; VAR outs
          ps2_encode := 0;
          outs := '';
          codes := chr(info.code);
+         mymode := K_NORMAL;
+         IF ((mod_ AND KEYBOARD_LEFT_SHIFT) > 0) OR ((mod_ AND KEYBOARD_RIGHT_SHIFT) > 0) OR ((mod_ AND KEYBOARD_CAPS_LOCK) > 0) THEN mymode := K_SHIFT_HACK;
 
-         CASE info.type_ OF
-    K_UNKNOWN:
-           BEGIN
-           END;
-    K_NORMAL:
-           BEGIN
-               IF NOT(make) THEN outs := #$F0;
-               outs := outs + codes;
-           END;
-    K_EXTENDED:
-           BEGIN
-               outs := #$E0;
-               IF NOT(make) THEN outs := outs + #$F0;
-               outs := outs + codes;
-           END;
-    K_NUMLOCK_HACK:
-           BEGIN
-               IF (make) THEN
+         CASE mymode OF
 
-                 BEGIN
-                 outs := #$E0 + #$12 +#$E0 + codes;  (* fake shift press*)
-                 END
-               ELSE
-                 BEGIN
-                 outs := #$E0 + #$F0 + codes + #$E0 + #$F0 + #$12;
-                 (* fake shift release*)
-                 END;
+         K_NORMAL:
+           BEGIN
+                IF NOT(make) THEN outs := #$F0;
+                outs := outs + codes;
            END;
-    K_SHIFT_HACK:
+
+         K_SHIFT_HACK:
            BEGIN
 
-               IF make THEN
+               IF NOT(make) THEN
                  BEGIN
                  (* fake shift release*)
-                 IF ((mod_ and KMOD_LSHIFT) > 0) THEN outs := outs + #$E0 + #$F0 + #$12;
-                 IF ((mod_ and KMOD_RSHIFT) > 0) THEN outs := outs + #$E0 + #$F0 + #$59;
-                 outs := outs + #$E0;
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$F0 + #$12;
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +#$F0 + #$59;
+                 //outs := outs + #$E0;
                  outs := outs + codes;
                  END
                else
                  BEGIN
-                 outs := outs + #$E0 + #$F0 + codes;
+                 outs := outs + codes;
                  (* fake shift press*)
-                 IF ((mod_ and KMOD_RSHIFT) > 0) THEN outs := outs + #$E0 + #$59;
-                 IF ((mod_ and KMOD_LSHIFT) > 0) THEN outs := outs + #$E0 + #$12;
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +  #$59;
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$12;
                  END;
            END;
-         END;{case}
+
+         end;
     ps2_encode := length(outs);
     END;
 
