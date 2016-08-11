@@ -361,17 +361,17 @@ function ps2_encode(sdl_scancode: integer;  make: boolean; mod_ : word; VAR outs
                IF NOT(make) THEN
                  BEGIN
                  (* fake shift release*)
-                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$F0 + #$12;
-                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +#$F0 + #$59;
-                 //outs := outs + #$E0;
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$E0+ #$F0 + #$12;
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +#$E0 +#$F0 + #$59;
+                 outs := outs + #$E0;
                  outs := outs + codes;
                  END
                else
                  BEGIN
-                 outs := outs + codes;
+                 outs := outs + #$E0+#$F0 + codes;
                  (* fake shift press*)
-                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +  #$59;
-                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$12;
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +  #$E0 + #$59;
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$E0 + #$12;
                  END;
            END;
 
