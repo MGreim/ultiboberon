@@ -68,7 +68,7 @@ WHITE = $fdf6e3;
 
 
 TYPE
-cachety =  ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] of uint32_t;
+cachety =  ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT DIV 32)] of uint32_t;
 bufferty = ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] OF uint32_t;
 
 
@@ -145,7 +145,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
           FOR line := RISC_SCREEN_HEIGHT-1 DOWNTO 0 DO
 
              BEGIN
-               FOR col := 0 TO pred(RISC_SCREEN_WIDTH) DO
+               FOR col := 0 TO pred(RISC_SCREEN_WIDTH DIV 32) DO
                    BEGIN
                      pixels := risc.RAM[idx+framebufferpointer];
                      IF pixels <> cache[idx] THEN
@@ -175,16 +175,16 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
           IF dirty_y1 <= dirty_y2 THEN
 
                BEGIN
-                 rect.x :=  dirty_x1;
+                 rect.x :=  dirty_x1 * 32;
                  rect.y :=  dirty_y1;
-                 rect.w := (dirty_x2 - dirty_x1 + 1);
+                 rect.w := (dirty_x2 - dirty_x1 + 1)*32;
                  rect.h := (dirty_y2 - dirty_y1 + 1);
 
 
-                 ptr:= @buffer[(dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1)];
+                 ptr:= @buffer[(dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1*32)];
 
 //                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
-                 GraphicsWindowDrawImage(GraphicHandle1, dirty_x1, dirty_y1, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
+                 GraphicsWindowDrawImage(GraphicHandle1, rect.x, rect.y, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
 
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
 
