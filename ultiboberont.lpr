@@ -70,6 +70,7 @@ WHITE = $fdf6e3;
 TYPE
 cachety =  ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT DIV 32)] of uint32_t;
 bufferty = ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] OF uint32_t;
+bufferxyty = ARRAY[0..pred(RISC_SCREEN_WIDTH), 0..pred(RISC_SCREEN_HEIGHT)] OF uint32;
 
 
 
@@ -78,7 +79,8 @@ bufferty = ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] OF uint32_t;
 var
  GraphicHandle1 :TWindowHandle;
  cache: cachety;
- buffer: bufferty;
+ buffer, bufferlin: bufferty;
+ bufferxy : bufferxyty;
  ledon : Boolean;
  neux, neuy, altx , alty : longint;
 
@@ -88,15 +90,30 @@ var
 
 PROCEDURE init_texture;
      VAR i : longint;
+         xi, yi : longint;
 
      BEGIN
-    fillchar(cache,sizeof(cache), 0);
+     fillchar(cache,sizeof(cache), 0);
 
        FOR  i := 0 TO Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT) DO
 
            BEGIN
              buffer[i] := BLACK;
            END;
+
+       FOR  xi := 0 TO Pred(RISC_SCREEN_WIDTH) DO
+
+           BEGIN
+           FOR  yi := 0 TO Pred(RISC_SCREEN_HEIGHT) DO
+               BEGIN
+                 bufferxy[xi, yi] := BLACK;
+               END;
+
+           END;
+
+
+
+
            GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
 //         FrameBufferConsoleDrawImage(ConsoleDeviceGetDefault, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN, 0);
 
@@ -112,34 +129,31 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
      TYPE
      rectty = RECORD
-                  x, y , h, w : integer;
+                  x, y , h, w, x2, y2 : integer;
             END;
 
 
      VAR
 
-        dirty_y1: integer;
-        dirty_y2: integer;
-        dirty_x1: integer;
-        dirty_x2: integer;
+
         idx: integer;
         pixels: uint32_t;
         ptr: Pointer;
-        rect : rectty;
 
-        line : 0..RISC_SCREEN_HEIGHT;
-        col  : 0..RISC_SCREEN_WIDTH;
-        bufferindex : 0..RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT;
+
+        line, ymin, ymax, yi, laufy : 0..RISC_SCREEN_HEIGHT;
+        col, xmin, xmax, xi, laufx  : 0..RISC_SCREEN_WIDTH;
+        bufferindex, i : 0..RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT;
         b : 0..pred(32);
 
         BEGIN (* TODO: move dirty rectangle tracking into emulator core?*)
    (*     writeln('upd texture'); *)
 //        GraphicsWindowDrawText(GraphicHandle1, '/', 30, 30);
 
-          dirty_y1 := RISC_SCREEN_HEIGHT;
-          dirty_y2 := 0;
-          dirty_x1 := RISC_SCREEN_WIDTH;
-          dirty_x2 := 0;
+          ymin := RISC_SCREEN_HEIGHT;
+          ymax := 0;
+          xmin := RISC_SCREEN_WIDTH;
+          xmax := 0;
 
           idx := 0;
           FOR line := RISC_SCREEN_HEIGHT-1 DOWNTO 0 DO
@@ -151,17 +165,22 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                      IF pixels <> cache[idx] THEN
                          BEGIN
                            cache[idx] := pixels;
-                           IF line < dirty_y1 THEN dirty_y1 := line;
-                           IF line > dirty_y2 THEN dirty_y2 := line;
-                           IF  col < dirty_x1 THEN dirty_x1 := col;
-                           IF  col > dirty_x2 THEN dirty_x2 := col;
 
                            bufferindex := line*RISC_SCREEN_WIDTH + col * 32;
+                           yi := line;
+                           IF yi < ymin THEN ymin := yi;
+                           IF yi > ymax THEN ymax := yi;
 
-                           FOR b := 0 TO Pred(32) DO
+
+                             FOR b := 0 TO Pred(32) DO
 
                                    BEGIN
+                                     xi := col * 32 +b;
+
                                      IF (pixels AND 1) > 0 THEN buffer[bufferindex] := WHITE ELSE buffer[bufferindex] := BLACK;
+                                     IF (pixels AND 1) > 0 THEN bufferxy[xi, yi] := WHITE ELSE bufferxy[xi, yi] := BLACK;
+                                     IF xi < xmin THEN xmin := xi;
+                                     IF xi > xmax THEN xmax := xi;
                                      inc(bufferindex);
                                      pixels := pixels SHR 1;
                                    END;
@@ -172,19 +191,30 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
 //         GraphicsWindowDrawImage(GraphicHandle1, 0, 0, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
 
-          IF dirty_y1 <= dirty_y2 THEN
+           i := 0;
+          IF ymin <= ymax THEN
 
                BEGIN
-                 rect.x :=  dirty_x1 * 32;
-                 rect.y :=  dirty_y1;
-                 rect.w := (dirty_x2 - dirty_x1 + 1)*32;
-                 rect.h := (dirty_y2 - dirty_y1 + 1);
+
+                 FOR laufy := ymin TO ymax DO
+
+                           BEGIN
+                             FOR laufx := xmin TO xmax DO
+                                       BEGIN
+                                         bufferlin[i] := bufferxy[laufx, laufy];
+                                         inc(i);
+                                       end;
+                           end;
 
 
-                 ptr:= @buffer[(dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1*32)];
 
-//                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
-                 GraphicsWindowDrawImage(GraphicHandle1, rect.x, rect.y, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
+
+
+//                 ptr:= @buffer[(rect.y * RISC_SCREEN_WIDTH + rect.x)];
+                   ptr:= @bufferlin;
+
+//                 GraphicsWindowSetViewport(GraphicHandle1,xmin, ymin, xmax, ymax, 1, dirty_y1, dirty_x2, dirty_y2);
+                   GraphicsWindowDrawImage(GraphicHandle1, xmin, ymin, ptr, (xmax - xmin +1), (ymax - ymin +1),COLOR_FORMAT_UNKNOWN);
 
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
 

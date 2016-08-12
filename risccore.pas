@@ -577,6 +577,8 @@ PROCEDURE riscty.store_byte(address: uint32_t;  value: uint8_t);
 
         BEGIN
 
+
+
         IF address < IOStart  THEN
            BEGIN
              w := RAM[address DIV 4];
