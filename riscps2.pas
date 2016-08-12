@@ -316,12 +316,11 @@ const
 
 TYPE
 
-modety = (K_UNKNOWN, K_NORMAL, K_EXTENDED, K_NUMLOCK_HACK, K_SHIFT_HACK);
+
 codety = 0..255;
 
 k_infoty = RECORD
         code: codety;
-        type_: modety;
         END;
 
 keymapty = ARRAY[0..Pred(SDL_NUM_SCANCODES)] of k_infoty;
@@ -336,7 +335,6 @@ function ps2_encode(sdl_scancode: integer;  make: boolean; mod_ : word; VAR outs
 
     VAR codes : char;
         info : k_infoty;
-        mymode : modety;
 
     BEGIN
          info := keymap[sdl_scancode];
@@ -344,38 +342,40 @@ function ps2_encode(sdl_scancode: integer;  make: boolean; mod_ : word; VAR outs
          ps2_encode := 0;
          outs := '';
          codes := chr(info.code);
-         mymode := K_NORMAL;
-         IF ((mod_ AND KEYBOARD_LEFT_SHIFT) > 0) OR ((mod_ AND KEYBOARD_RIGHT_SHIFT) > 0) OR ((mod_ AND KEYBOARD_CAPS_LOCK) > 0) THEN mymode := K_SHIFT_HACK;
 
-         CASE mymode OF
+         //IF mod_ = 0 THEN
+         //
+         //  BEGIN
+         //       IF NOT(make) THEN outs := #$F0;
+         //       outs := outs + codes;
+         //  END
+         //   ELSE
+         //  BEGIN
 
-         K_NORMAL:
-           BEGIN
-                IF NOT(make) THEN outs := #$F0;
-                outs := outs + codes;
-           END;
-
-         K_SHIFT_HACK:
-           BEGIN
-
-               IF NOT(make) THEN
+               IF make THEN
                  BEGIN
-                 (* fake shift release*)
-                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$E0+ #$F0 + #$12;
-                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +#$E0 +#$F0 + #$59;
-                 outs := outs + #$E0;
+                 (*  press *)
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs +  #$12;
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs + #$59;
+                 IF ((mod_ AND KEYBOARD_CAPS_LOCK) > 0) THEN outs := outs + #$59;
+                 IF ((mod_ AND KEYBOARD_LEFT_CTRL) > 0) THEN outs := outs + #$14;
+                 IF ((mod_ AND KEYBOARD_RIGHT_CTRL) > 0) THEN outs := outs + #$E0 + #$14;
+
                  outs := outs + codes;
                  END
                else
                  BEGIN
-                 outs := outs + #$E0+#$F0 + codes;
-                 (* fake shift press*)
-                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs +  #$E0 + #$59;
-                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$E0 + #$12;
-                 END;
-           END;
+                 outs := outs + #$F0 + codes;
+                 (* release *)
+                 IF ((mod_ and KEYBOARD_RIGHT_SHIFT) > 0) THEN outs := outs + #$F0 +  #$59;
+                 IF ((mod_ and KEYBOARD_LEFT_SHIFT) > 0) THEN outs := outs + #$F0 +  #$12;
+                 IF ((mod_ AND KEYBOARD_CAPS_LOCK) > 0) THEN outs := outs + #$F0 + #$59;
+                 IF ((mod_ AND KEYBOARD_LEFT_CTRL) > 0) THEN outs := outs + #$F0+ #$14;
+                 IF ((mod_ AND KEYBOARD_RIGHT_CTRL) > 0) THEN outs := outs + #$E0 + #$F0 + #$14;
 
-         end;
+                 END;
+//           END;
+
     ps2_encode := length(outs);
     END;
 
@@ -492,117 +492,6 @@ keymap[SDL_SCANCODE_RSHIFT].code:=($59);
 keymap[SDL_SCANCODE_RALT].code:=($11);
 keymap[SDL_SCANCODE_RGUI].code:=($27);
 
-
-keymap[SDL_SCANCODE_A].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_B].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_C].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_D].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_E].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_G].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_H].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_I].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_J].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_K].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_L].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_M].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_N].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_O].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_P].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_Q].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_R].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_S].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_T].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_U].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_V].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_W].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_X].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_Y].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_Z].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_1].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_2].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_3].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_4].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_5].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_6].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_7].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_8].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_9].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_0].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_RETURN].type_:= (K_NORMAL);
-keymap[SDL_SCANCODE_ESCAPE].type_:= (K_NORMAL);
-keymap[SDL_SCANCODE_BACKSPACE].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_TAB].type_:= (K_NORMAL);
-keymap[SDL_SCANCODE_SPACE].type_:= (K_NORMAL);
-
-keymap[SDL_SCANCODE_MINUS].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_EQUALS].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_LEFTBRACKET].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_RIGHTBRACKET].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_BACKSLASH].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_NONUSHASH].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_SEMICOLON].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_APOSTROPHE].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_GRAVE].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_COMMA].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_PERIOD].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_SLASH].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_F1].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F2].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F3].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F4].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F5].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F6].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F7].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F8].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F9].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F10].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F11].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_F12].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_INSERT].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_HOME].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_PAGEUP].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_DELETE].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_END].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_PAGEDOWN].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_RIGHT].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_LEFT].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_DOWN].type_:=(K_NUMLOCK_HACK);
-keymap[SDL_SCANCODE_UP].type_:=(K_NUMLOCK_HACK);
-
-keymap[SDL_SCANCODE_KP_DIVIDE].type_:=(K_SHIFT_HACK);
-keymap[SDL_SCANCODE_KP_MULTIPLY].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_MINUS].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_PLUS].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_ENTER].type_:=(K_EXTENDED);
-keymap[SDL_SCANCODE_KP_1].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_2].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_3].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_4].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_5].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_6].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_7].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_8].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_9].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_0].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_KP_PERIOD].type_:=(K_NORMAL);
-
-keymap[SDL_SCANCODE_NONUSBACKSLASH].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_APPLICATION].type_:=(K_EXTENDED);
-
-keymap[SDL_SCANCODE_LCTRL].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_LSHIFT].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_LALT].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_LGUI].type_:=(K_EXTENDED);
-keymap[SDL_SCANCODE_RCTRL].type_:=(K_EXTENDED);
-keymap[SDL_SCANCODE_RSHIFT].type_:=(K_NORMAL);
-keymap[SDL_SCANCODE_RALT].type_:=(K_EXTENDED);
-keymap[SDL_SCANCODE_RGUI].type_:=(K_EXTENDED);
 
 
 

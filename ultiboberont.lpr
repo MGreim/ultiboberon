@@ -98,10 +98,9 @@ PROCEDURE init_texture;
              buffer[i] := BLACK;
            END;
            GraphicsWindowDrawImage(GraphicHandle1, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
-//           FrameBufferConsoleDrawImage(ConsoleDeviceGetDefault, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN, 0);
+//         FrameBufferConsoleDrawImage(ConsoleDeviceGetDefault, 1, 1, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN, 0);
 
 
-         //       SDL_UpdateTexture(texture,NIL,@buffer,RISC_SCREEN_WIDTH*4);
      END;
 
 
@@ -171,7 +170,7 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
                    END;(*for col *)
              END;(*for line *)
 
-         GraphicsWindowDrawImage(GraphicHandle1, 0, 0, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
+//         GraphicsWindowDrawImage(GraphicHandle1, 0, 0, @buffer, RISC_SCREEN_WIDTH, RISC_SCREEN_HEIGHT,COLOR_FORMAT_UNKNOWN);
 
           IF dirty_y1 <= dirty_y2 THEN
 
@@ -184,22 +183,8 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
                  ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
 
-//                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
-//                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, (dirty_x2 - dirty_x1), rect.h,COLOR_FORMAT_UNKNOWN);
-//                 GraphicsWindowDrawText(GraphicHandle1, 'X', 30, 30);
-                 {8 bits per pixel Red/Green/Blue (RGB332)}
-{Draw an image on an existing console window}
-{Handle: The handle of the window to draw on}
-{X: The left starting point of the image (relative to current viewport)}
-{Y: The top starting point of the image (relative to current viewport)}
-{Image: Pointer to the image data in a contiguous block of pixel rows}
-{Width: The width in pixels of a row in the image data}
-{Height: The height in pixels of all rows in the image data}
-{Format: The color format of the image data (eg COLOR_FORMAT_ARGB32) Pass COLOR_FORMAT_UNKNOWN to use the window format}
-{Return: ERROR_SUCCESS if completed or another error code on failure}
-
-{Note: For Graphics Console functions, Viewport is based on screen pixels not characters}
-
+                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
+                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, (dirty_x2 - dirty_x1), rect.h,COLOR_FORMAT_UNKNOWN);
 
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
 
@@ -242,38 +227,7 @@ PROCEDURE toggleLED;
           IF ledon THEN ActivityLEDON ELSE ActivityLEDOff;
           end;
 
-PROCEDURE mykeyboard;
 
-          CONST screenh = 1024;
-          VAR Character : char;
-
-             BEGIN
-
-
-            if ConsoleKeyPressed then
-                begin
-
-                Character := ConsoleReadKey;
-                toggleLED;
-
-                case Character of
-                #0 : begin
-                       Character:=ConsoleReadKey; {Read ScanCode}
-                       GraphicsWindowDrawText(GraphicHandle1,'', 100, screenh - 200);
-                       GraphicsWindowDrawText(GraphicHandle1,'Character = 0   -> 2. Character = ' + IntToHex(Byte(Character),4), 100, screenh -180);
-
-                     end;
-                #13 : GraphicsWindowDrawText(GraphicHandle1,'CR', 100, screenh-160);
-                else
-                  GraphicsWindowDrawText(GraphicHandle1,'Character = ' + Character + '  -> ' + IntToHex(Byte(Character),4), 100, screenh -140);
-
-                end;
-                // sleep(2);
-
-                end; { if ConsoleKeyPressed then }
-
-
-             end;
 
 
 
@@ -375,32 +329,32 @@ FUNCTION mykeyboard2 : longword;
                       IF (KeyboardRead(@KeyboardData,SizeOf(KeyboardData), Count) = ERROR_SUCCESS) THEN
 
                                   BEGIN
-
-                                  lauf := 38;
-                                  GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
-
-
-                                  GraphicsWindowDrawText(GraphicHandle1, 'Char                  = ' + IntToHex(Count,4), left, 100 + lauf * abstand);
-                                  inc(lauf);
-
-                                  // KeyCode = Character übersetzt mit Keymap
-                                  GraphicsWindowDrawText(GraphicHandle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4), left, 100 + lauf * abstand);
-                                  inc(lauf);
-                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,8) , left, 100 + lauf * abstand);
-                                  inc(lauf);
-                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4) , left, 100 + lauf * abstand);
-                                  inc(lauf);
-                                  GraphicsWindowDrawLine(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+lauf*abstand, COLOR_RED, 2);
-                                  inc(lauf);
+//
+//                                  lauf := 38;
+//                                  GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
+//
+//
+//                                  GraphicsWindowDrawText(GraphicHandle1, 'Char                  = ' + IntToHex(Count,4), left, 100 + lauf * abstand);
+//                                  inc(lauf);
+//
+//                                  // KeyCode = Character übersetzt mit Keymap
+//                                  GraphicsWindowDrawText(GraphicHandle1, 'KeyboardData.KeyCode   = ' + IntToHex(KeyboardData.KeyCode,4), left, 100 + lauf * abstand);
+//                                  inc(lauf);
+//                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.Modifiers = ' + IntToHex(KeyboardData.Modifiers,8) , left, 100 + lauf * abstand);
+//                                  inc(lauf);
+//                                  GraphicsWindowDrawText(GraphicHandle1,'KeyboardData.ScanCode  = ' + IntToHex(KeyboardData.ScanCode,4) , left, 100 + lauf * abstand);
+//                                  inc(lauf);
+//                                  GraphicsWindowDrawLine(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+lauf*abstand, COLOR_RED, 2);
+//                                  inc(lauf);
                                   mykeyboard2 := KeyboardData.ScanCode;
 
                                   IF lauf > 40 THEN lauf := 38;
                                   mymode_ := 0;
                                   mymake := False;
-                                  IF ((KeyboardData.Modifiers AND $4000) > 0)  THEN mymake := true;
+                                  IF (((KeyboardData.Modifiers AND $4000) > 0) OR ((KeyboardData.Modifiers AND $8000) > 0)) THEN mymake := true;
                                   IF ((KeyboardData.Modifiers AND $2000) > 0)  THEN mymake := False;
                                   // $4000 = keypressed $8000 = repeat
-                                  mymode_ := KeyboardData.Modifiers AND $000FFF;
+                                  mymode_ := KeyboardData.Modifiers AND $0FFF;
                                   len := ps2_encode(KeyboardData.ScanCode,mymake, mymode_, scancode_s);
                                             IF len > 0 THEN
 
@@ -409,7 +363,6 @@ FUNCTION mykeyboard2 : longword;
 
                                                         BEGIN
                                                         scancode[l] := ord(scancode_s[succ(l)]);
-                                                      (*  write('|',scancode[l]); *)
                                                         END;
                                                  END;
                                         risc.keyboard_input(scancode, len);
@@ -423,44 +376,6 @@ FUNCTION mykeyboard2 : longword;
 
 
 
-FUNCTION mykeyboard3 : longword;
-
-
-          CONST
-               abstand = 18;
-               left = 50;
-
-          VAR
-
-          lauf : integer;
-          c1, c2 : char;
-
-
-
-          BEGIN
-          c1 := #0;
-          c2 := #0;
-          IF ConsoleKeypressed THEN
-                      BEGIN
-                      c1 := ConsoleReadKey;
-                      IF c1 = #0 THEN c2 := ConsoleReadKey;
-
-
-                      lauf := 38;
-                      GraphicsWindowDrawBlock(GraphicHandle1, 0, 100+lauf*abstand, 800, 100+(lauf+6)*abstand, COLOR_WHITE);
-
-                      GraphicsWindowDrawText(GraphicHandle1, 'C1                  = ' + IntToHex(ord(C1),4), left, 100 + lauf * abstand);
-                      inc(lauf);
-
-                      GraphicsWindowDrawText(GraphicHandle1, 'C2                  = ' + IntToHex(ord(C2),4), left, 100 + lauf * abstand);
-                      inc(lauf);
-
-                      IF lauf > 40 THEN lauf := 38;
-
-                      end;
-
-
-          END;
 
 
 
@@ -470,45 +385,20 @@ PROCEDURE main;
     var
        done: bool;
        frame_start: longword;
-       frame_end, starttime, kCount, mCount: longword;
+       frame_end, starttime: longword;
 
        mydelay, counter: longint;
-       zeile : string;
-        Character : char;
 
 
 
 
        BEGIN
-//       GraphicsWindowDrawText(GraphicHandle1, 'Now in main', 10,20);
 
-         //IF paramcount <> 1 THEN
-         //   BEGIN
-         //     writeln('Argv : ', paramcount);
-         //     writeln('Args : ', paramstr(0), ' ', paramstr(1),' ',paramstr(2),' ',paramstr(3));
-         //     writeln('Usage: riscpas disk-file-name [coredumpfile_from_cycle coredumpfile_to_cycle]');
-         //     writeln('Stop with Alt-F4');
-         //     exitcode := 1;
-         //     exit;
-         //   END;
-
-
-//         risc.init(paramstr(1), paramstr(2), paramstr(3));
-//           write('jetzt risc.init');
-           //REPEAT
-           //UNTIL ConsoleKeyPressed;
-
-           risc.init('C:\oberon.dsk', '', '');
-//           ConsoleWindowWriteln(WindowHandleX, ' oberon.dsk is loaded');
-
+         risc.init('C:\oberon.dsk', '', '');
          done := False;
-
-
 
          starttime := getTickCount64;
          counter := 0;
-         mCount := 0;
-         kCount := 0;
          neux := 0;
          neuy := 0;
          altx := 0;
@@ -537,7 +427,6 @@ PROCEDURE main;
               exitcode := 0;
            END; (* while not done *)
         risc.done;
-        //shutting down video subsystem
 
       END; (* proc *)
 
@@ -548,17 +437,10 @@ PROCEDURE main;
 
 begin
 
-     GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
-
+    GraphicHandle1 := GraphicsWindowCreate(ConsoleDeviceGetDefault,CONSOLE_POSITION_FULL);
     init_texture;
 
     main;
-
-
-
-
- // my end
-
 
 
  {We're not doing a loop this time so we better halt this thread before it exits}
