@@ -41,12 +41,13 @@ uses
   Framebuffer,
   BCM2836,
   BCM2709,
-
   SysUtils,
-  // With this block ogf units we can update
-  //the SD card via telnet. The remote computer is xx.29
-  //the path is /var/www
-  //unfortunately a sunbdirectory doesnt work with my apche2
+
+
+  // With this following block of units we can update
+  // the SD card via telnet. The remote computer is xx.29
+  // the path is /var/www
+  // unfortunately a sunbdirectory doesnt work with my apache2
 //----------------------------------------------------------------------
  Shell,           {Add the Shell unit just for some fun}
  ShellFileSystem, {Plus the File system shell commands}
@@ -56,7 +57,6 @@ uses
 //--------------------------------------------------------------
 
   Mouse,
-//  Keymap_DE,
   Keyboard, {Keyboard uses USB so that will be included automatically}
   DWCOTG,          {We need to include the USB host driver for the Raspberry Pi}
 
@@ -68,7 +68,7 @@ WHITE = $fdf6e3;
 
 
 TYPE
-cachety =  ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT DIV 32)] of uint32_t;
+cachety =  ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] of uint32_t;
 bufferty = ARRAY[0..Pred(RISC_SCREEN_WIDTH*RISC_SCREEN_HEIGHT)] OF uint32_t;
 
 
@@ -138,14 +138,14 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
 
           dirty_y1 := RISC_SCREEN_HEIGHT;
           dirty_y2 := 0;
-          dirty_x1 := RISC_SCREEN_WIDTH div 32;
+          dirty_x1 := RISC_SCREEN_WIDTH;
           dirty_x2 := 0;
 
           idx := 0;
           FOR line := RISC_SCREEN_HEIGHT-1 DOWNTO 0 DO
 
              BEGIN
-               FOR col := 0 TO pred(RISC_SCREEN_WIDTH DIV 32) DO
+               FOR col := 0 TO pred(RISC_SCREEN_WIDTH) DO
                    BEGIN
                      pixels := risc.RAM[idx+framebufferpointer];
                      IF pixels <> cache[idx] THEN
@@ -175,16 +175,16 @@ PROCEDURE update_texture(framebufferpointer : uint32_t);
           IF dirty_y1 <= dirty_y2 THEN
 
                BEGIN
-                 rect.x :=  dirty_x1 * 32;
+                 rect.x :=  dirty_x1;
                  rect.y :=  dirty_y1;
-                 rect.w := (dirty_x2 - dirty_x1 + 1) * 32;
+                 rect.w := (dirty_x2 - dirty_x1 + 1);
                  rect.h := (dirty_y2 - dirty_y1 + 1);
 
 
-                 ptr:= @buffer[dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1 * 32];
+                 ptr:= @buffer[(dirty_y1 * RISC_SCREEN_WIDTH + dirty_x1)];
 
-                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
-                 GraphicsWindowDrawImage(GraphicHandle1, 0, 0, ptr, (dirty_x2 - dirty_x1), rect.h,COLOR_FORMAT_UNKNOWN);
+//                 GraphicsWindowSetViewport(GraphicHandle1,dirty_x1, dirty_y1, dirty_x2, dirty_y2);
+                 GraphicsWindowDrawImage(GraphicHandle1, dirty_x1, dirty_y1, ptr, rect.w, rect.h,COLOR_FORMAT_UNKNOWN);
 
 //                 SDL_UpdateTexture(texture, @rect, ptr, RISC_SCREEN_WIDTH * 4);
 
