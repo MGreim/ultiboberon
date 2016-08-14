@@ -59,7 +59,7 @@ FUNCTION fpty.add_(x, y : uint32_t; u, v : Boolean) : uint32_t;
 
   BEGIN
   xs := (x AND $80000000) <>  0;
-  if NOT(u) THEN
+  IF NOT(u) THEN
     BEGIN
     xe := (x SHR 23) AND $FF;
     xm := ((x AND $7FFFFF) SHL 1) OR $1000000;
@@ -102,7 +102,7 @@ FUNCTION fpty.add_(x, y : uint32_t; u, v : Boolean) : uint32_t;
 
   e1 := e0 + 1;
   t3 := s SHR 1;
-  if ((s AND $3FFFFFC) <> 0) THEN
+  IF ((s AND $3FFFFFC) <> 0) THEN
 
         BEGIN
         WHILE ((t3 AND (1 SHL 24)) = 0) DO
@@ -117,7 +117,7 @@ FUNCTION fpty.add_(x, y : uint32_t; u, v : Boolean) : uint32_t;
         e1 := e1 - 24;
         END;
 
-  if v THEN
+  IF v THEN
 
        BEGIN
        add_ := (sum SHL 5) SHR 6;
@@ -131,13 +131,13 @@ FUNCTION fpty.add_(x, y : uint32_t; u, v : Boolean) : uint32_t;
            exit
            END;
 
-       if ((y AND $7FFFFFFF) = 0) THEN
+       IF ((y AND $7FFFFFFF) = 0) THEN
 
                 BEGIN
                 add_ := x;
                 exit;
                 END;
-       if ((t3 AND $01FFFFFF) = 0) OR ((e1 AND $100) <> 0) THEN
+       IF ((t3 AND $01FFFFFF) = 0) OR ((e1 AND $100) <> 0) THEN
 
                 BEGIN
                 add_ := 0;
@@ -167,7 +167,7 @@ FUNCTION fpty.mul_( x,y :  uint32_t) : uint32_t;
        m     := xm * ym;
 
        e1 := (xe + ye) - 127;
-       if ((m AND (1 SHL 47)) <> 0) THEN
+       IF ((m AND (1 SHL 47)) <> 0) THEN
 
                 BEGIN
                 inc(e1);
@@ -219,7 +219,7 @@ FUNCTION fpty.div_( x,y :  uint32_t ) : uint32_t;
          e1   := (xe - ye) + 126;
 
 
-        if ((q1 AND $800000) <> 0) THEN
+        IF ((q1 AND $800000) <> 0) THEN
 
                 BEGIN
                 inc(e1);
@@ -243,14 +243,14 @@ FUNCTION fpty.div_( x,y :  uint32_t ) : uint32_t;
                 div_ :=  sign OR ($FF SHL 23);
                 exit;
                 END;
-          if ((e1 AND $100) = 0) THEN
+          IF ((e1 AND $100) = 0) THEN
 
                 BEGIN
                 div_ := sign OR ((e1 AND $FF) SHL 23) OR q2;
                 exit;
                 END;
 
-          if ((e1 AND $80) = 0) THEN
+          IF ((e1 AND $80) = 0) THEN
 
                 BEGIN
                 div_ :=  sign OR ($FF SHL 23) OR q2;

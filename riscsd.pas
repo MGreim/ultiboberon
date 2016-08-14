@@ -65,10 +65,10 @@ CONSTRUCTOR diskty.init(filename : string);
         {We may need to wait a couple of seconds for any drive to be ready}
 //         WriteLn('Waiting for drive C:\');
          while not DirectoryExists('C:\') do
-          begin
+          BEGIN
            {Sleep for a second}
            Sleep(1000);
-          end;
+          END;
 //         writeLn('C:\ drive is ready');
 
 
@@ -76,7 +76,6 @@ CONSTRUCTOR diskty.init(filename : string);
         sdcard := False;
         buffer[0] := 0;
 {$I-}
-//        writeln(' Filename : ', filename);
         myfile := fileOpen(filename, fmOpenReadWrite);
 {$I+}
         IF myfile = 0 THEN
