@@ -11,7 +11,7 @@ UNIT riscsd;
 INTERFACE
 
 USES
-    Filesystem, FATFS, sysutils, riscglob;
+    Platform, Filesystem, FATFS, sysutils, riscglob;
 
 CONST BUFSBYTE = 512;
       BUFSWORD = BUFSBYTE DIV 4;
@@ -61,6 +61,7 @@ CONSTRUCTOR diskty.init(filename : string);
         VAR buffer : bufty;
 
         BEGIN
+         ActivityLEDON;
 //        writeln(' Now in diskty.init');
         {We may need to wait a couple of seconds for any drive to be ready}
 //         WriteLn('Waiting for drive C:\');
@@ -91,7 +92,7 @@ CONSTRUCTOR diskty.init(filename : string);
 //        writeln(' File Offset : ', offset);
 //        writeln('Buffer[0] : ',buffer[0]);
         sdcard := True;
-
+        ActivityLEDOff;
         END;
 
 

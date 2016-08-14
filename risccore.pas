@@ -6,7 +6,9 @@ UNIT risccore;
 
 INTERFACE
 
-USES riscsd, riscfp, riscglob;
+USES
+  platform, (* for the LED *)
+  riscsd, riscfp, riscglob;
 
 CONST
 maxregister = 16;
@@ -672,10 +674,10 @@ PROCEDURE riscty.store_io(address: uint32_t;  value: uint32_t);
               (* LED control*)
               leds:= value;
               //write('LEDs: ');
-              //        FOR i := 7 DOWNTO 0 DO
-              //          BEGIN
-              //            IF ((leds and (1 shl i)) > 0) THEN  write(i) ELSE write('-');
-              //          END;
+              FOR i := 7 DOWNTO 0 DO
+                        BEGIN
+                          IF ((leds and (1 shl i)) > 0) THEN  ActivityLEDOn ELSE ActivityLEDoff;
+                        END;
               //writeln;
               END;
 

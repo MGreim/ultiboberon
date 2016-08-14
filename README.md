@@ -106,8 +106,16 @@ from the Windows or OsX world. Even if Allen, Wozniak, Gates and Jobs said that
 they have been at least "inspired" by the ALTO system they had seen at Xerox.
 12. You need a 3 button mouse.
 13. .. and many more..
+14. Only tested with a 1280 x 1024 screen
 
 #Licenses
+
+#Licenses
+Copyright: (c) Markus Greim, August 2016
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted, provided that the
+below copyright notice and this permission notice appear in all
+copies.
 
 ##Ultibo
 core is licensed under the GNU Lesser General Public License v2.1 and is
