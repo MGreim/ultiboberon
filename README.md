@@ -81,7 +81,7 @@ complexity of Linux and Windows.
 3. Having direct hardware access from OBERON. Up to now only the Blink.Run works, but integrate GPIO, the serial interface etc. may be done with only a few
 lines of code.
 4. Its quite easy to expand OBERON with some TCP/IP functionality, which is already part of the Ultibo libraries.
-5. Maybe in the future OBERON can be used as a kind of inelligent shell, including
+5. Maybe in the future OBERON can be used as a kind of intelligent shell, including
 editor, compiler etc. for Ultibo.
 
 # Hints, Design, Problems etc.
